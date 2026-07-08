@@ -1,0 +1,89 @@
+schema: spec-driven
+
+project:
+  name: OpenCoaster
+  lifecycle: greenfield-mvp
+  persistence: hybrid
+
+workflow:
+  execution_mode: interactive
+  chained_pr_strategy: auto-forecast
+  review_budget_lines: 800
+
+context: |
+  Stack intent: Expo + React Native + TypeScript for an Android MVP.
+  Maps: react-native-maps.
+  Data: TanStack Query or another lightweight typed cache.
+  Security: no secrets in source; use local env vars only.
+  Status: repository is empty; stack is planned policy, not yet bootstrapped code.
+
+testing:
+  strict_tdd: true
+  source: external config adopted partially; runner adjusted for Expo compatibility
+  detected: 2026-07-07
+  runner:
+    available: false
+    framework: Jest + jest-expo
+    rationale: Expo documentation recommends Jest-based unit testing; Vitest jsdom was not adopted for native-focused MVP bootstrap.
+    commands:
+      test: npx jest
+      watch: npx jest --watch
+      coverage: npx jest --coverage
+  layers:
+    unit:
+      available: false
+      tool: Jest
+    integration:
+      available: false
+      tool: '@testing-library/react-native'
+    e2e:
+      available: false
+      tool: '—'
+  quality:
+    linter:
+      available: false
+      command: npx eslint .
+    type_checker:
+      available: false
+      command: npx tsc --noEmit
+    formatter:
+      available: false
+      command: npx prettier . --check
+
+rules:
+  proposal:
+    - State Android MVP scope, rollout assumptions, and rollback path for risky changes.
+  specs:
+    - Use Given/When/Then scenarios.
+    - Use RFC 2119 keywords (MUST, SHOULD, MAY).
+  design:
+    - Record architecture decisions and integration boundaries.
+    - Call out offline/cache behavior and map-related constraints.
+  tasks:
+    - Group by phase and keep each task completable in one session.
+    - Forecast PR size against the 800-line review budget.
+  apply:
+    - Follow Red-Green-Refactor once the test toolchain is bootstrapped.
+    - Keep secrets out of source control and use local env files only.
+    tdd: true
+    test_command: npx jest
+  verify:
+    test_command: npx jest --coverage
+    build_command: ''
+    coverage_threshold: 0
+  archive:
+    - Preserve archived changes as an audit trail.
+
+adoption_notes:
+  source_file: C:\Users\apere\Downloads\openspec.config.yaml
+  adopted:
+    - project identity and Android MVP intent
+    - hybrid artifact persistence
+    - interactive workflow
+    - strict_tdd policy
+    - no-secrets-in-source constraint
+  not_adopted_verbatim:
+    - testing.runner=vitest/jsdom
+    - sdd.spec_path=./specs
+    - sdd.design_path=./design
+    - sdd.review_budget_lines=400
