@@ -67,8 +67,8 @@ Chain strategy: pending
 
 ## Phase 8: Park Detail Feature
 
-- [ ] 8.1 `src/features/park-details/ParkDetailScreen.tsx` — placeholder with name, city, photo (or fallback) — `search-park` R3/S6-7
-- [ ] 8.2 RED→GREEN→REFACTOR: detail shows park info, missing photo shows placeholder, nav from result list opens detail
+- [x] 8.1 `src/features/park-details/ParkDetailScreen.tsx` — placeholder with name, city, photo (or fallback) — `search-park` R3/S6-7
+- [x] 8.2 RED→GREEN→REFACTOR: detail shows park info, missing photo shows placeholder, nav from result list opens detail
 
 ## Design Coverage
 
@@ -81,10 +81,10 @@ Chain strategy: pending
 | Fixture data (3 parks, US+EU) | ✅ Covered | P3 |
 | LocationService interface + ExpoLocationService | ✅ Covered | P4 |
 | FakeLocationService test double | ✅ Covered | P4 |
-| RootNavigator (3 routes) | ⏳ PR 2 | P5 |
-| App.tsx (QueryClientProvider + NavigationContainer) | ⏳ PR 2 | P6 |
-| DiscoveryScreen (map + search composition) | ⏳ PR 2 | P7 |
-| SearchBar (name + city) | ⏳ PR 2 | P7 |
-| ParkResultList (+ empty state) | ⏳ PR 2 | P7 |
-| useSearchParks hook | ⏳ PR 2 | P7 |
-| ParkDetailScreen placeholder | ⏳ PR 2 | P8 |
+| RootNavigator (3 routes) | ✅ Covered | P5 |
+| App.tsx (QueryClientProvider + NavigationContainer) | ✅ Covered | P6 |
+| DiscoveryScreen (map + search composition) | ✅ Covered | P7 |
+| SearchBar (name + city) | ✅ Covered | P7 |
+| ParkResultList (+ empty state) | ✅ Covered | P7 |
+| useSearchParks hook | ✅ Covered | P7 |
+| ParkDetailScreen placeholder | ✅ Covered | P8 |

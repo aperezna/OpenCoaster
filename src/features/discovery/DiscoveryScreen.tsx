@@ -5,17 +5,22 @@ import { DEFAULT_REGION } from '../../config/constants';
 import { SearchBar } from './SearchBar';
 import { ParkResultList } from './ParkResultList';
 import { useSearchParks } from './useSearchParks';
+import { ExpoLocationService } from '../../data/location/ExpoLocationService';
+import { FixtureParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
 import type { LocationService, Coords } from '../../data/location/LocationService';
 import type { ParkDiscoveryProvider, ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
 
 interface DiscoveryScreenProps {
-  locationService: LocationService;
-  parkDiscoveryProvider: ParkDiscoveryProvider;
+  locationService?: LocationService;
+  parkDiscoveryProvider?: ParkDiscoveryProvider;
 }
 
+const defaultLocationService = new ExpoLocationService();
+const defaultParkProvider = new FixtureParkDiscoveryProvider();
+
 export function DiscoveryScreen({
-  locationService,
-  parkDiscoveryProvider,
+  locationService = defaultLocationService,
+  parkDiscoveryProvider = defaultParkProvider,
 }: DiscoveryScreenProps): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState<ParkSearchQuery>({});
 
