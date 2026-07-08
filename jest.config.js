@@ -34,5 +34,7 @@ module.exports = {
       '<rootDir>/__mocks__/@react-navigation/native.tsx',
     '^@react-navigation/native-stack$':
       '<rootDir>/__mocks__/@react-navigation/native-stack.tsx',
+    '^@react-navigation/bottom-tabs$':
+      '<rootDir>/__mocks__/@react-navigation/bottom-tabs.tsx',
   },
 };

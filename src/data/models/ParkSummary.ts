@@ -7,4 +7,7 @@ export interface ParkSummary {
   longitude: number;
   photoUrl?: string;
   timezone?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
 }

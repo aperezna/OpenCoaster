@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DiscoveryScreen } from '../features/discovery/DiscoveryScreen';
 import { ParkDetailScreen } from '../features/park-details/ParkDetailScreen';
+import { ProfileScreen } from '../features/profile/ProfileScreen';
 
-export type RootStackParamList = {
-  Discovery: undefined;
-  ParkDetail: { parkId: string };
+export type RootTabParamList = {
+  Mapa: undefined;
+  Parques: { parkId?: string } | undefined;
+  Usuario: undefined;
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<RootTabParamList>();
 
 export function FallbackView(): React.JSX.Element {
   return (
@@ -20,31 +22,47 @@ export function FallbackView(): React.JSX.Element {
 }
 
 interface RootNavigatorProps {
-  initialRouteName?: keyof RootStackParamList;
+  initialRouteName?: keyof RootTabParamList;
 }
 
-const validRoutes: Record<string, true> = { Discovery: true, ParkDetail: true };
+const validRoutes: Record<string, true> = { Mapa: true, Parques: true, Usuario: true };
 
 export function RootNavigator({
-  initialRouteName = 'Discovery',
+  initialRouteName = 'Mapa',
 }: RootNavigatorProps): React.JSX.Element {
   if (!validRoutes[initialRouteName as string]) {
     return <FallbackView />;
   }
 
+  const [selectedParkId, setSelectedParkId] = useState<string | undefined>(undefined);
+  const [selectedTab, setSelectedTab] = useState<keyof RootTabParamList>(initialRouteName);
+
+  const handleParkSelect = useCallback((parkId: string) => {
+    setSelectedParkId(parkId);
+    setSelectedTab('Parques');
+  }, []);
+
   return (
-    <Stack.Navigator
-      initialRouteName={initialRouteName as keyof RootStackParamList}
+    <Tab.Navigator
+      initialRouteName={initialRouteName as keyof RootTabParamList}
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen
-        name="Discovery"
-        component={DiscoveryScreen}
+      <Tab.Screen
+        name="Mapa"
+        children={() => (
+          <DiscoveryScreen onParkSelect={handleParkSelect} />
+        )}
       />
-      <Stack.Screen
-        name="ParkDetail"
-        component={ParkDetailScreen}
+      <Tab.Screen
+        name="Parques"
+        children={() => (
+          <ParkDetailScreen selectedParkId={selectedParkId ?? 'magic-kingdom'} />
+        )}
       />
-    </Stack.Navigator>
+      <Tab.Screen
+        name="Usuario"
+        component={ProfileScreen}
+      />
+    </Tab.Navigator>
   );
 }

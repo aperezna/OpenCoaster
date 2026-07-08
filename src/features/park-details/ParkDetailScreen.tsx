@@ -1,39 +1,74 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  Linking,
+  StyleSheet,
+} from 'react-native';
 import { FixtureParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
+import { WeatherCard } from './WeatherCard';
+import { HoursCard } from './HoursCard';
+import { AttractionList } from './AttractionList';
 import type { ParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
 import type { ParkSummary } from '../../data/models/ParkSummary';
+import type { ParkWeather } from '../../data/models/ParkWeather';
+import type { ParkHours } from '../../data/models/ParkHours';
+import type { Attraction } from '../../data/models/Attraction';
 
 interface ParkDetailScreenProps {
-  route: {
+  route?: {
     key: string;
     name: string;
-    params: { parkId: string };
+    params: { parkId?: string };
   };
   parkDiscoveryProvider?: ParkDiscoveryProvider;
+  selectedParkId?: string;
 }
 
 const defaultParkProvider = new FixtureParkDiscoveryProvider();
+const DEFAULT_PARK_ID = 'magic-kingdom';
 
 export function ParkDetailScreen({
   route,
   parkDiscoveryProvider = defaultParkProvider,
+  selectedParkId,
 }: ParkDetailScreenProps): React.JSX.Element {
-  const { parkId } = route.params;
+  const parkId =
+    selectedParkId ?? route?.params?.parkId ?? DEFAULT_PARK_ID;
+
   const [park, setPark] = useState<ParkSummary | null | undefined>(undefined);
+  const [weather, setWeather] = useState<ParkWeather | null>(null);
+  const [hours, setHours] = useState<ParkHours | null>(null);
+  const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    parkDiscoveryProvider
-      .searchParks({})
-      .then((parks) => {
-        const found = parks.find((p) => p.id === parkId);
-        setPark(found ?? null);
+    Promise.all([
+      parkDiscoveryProvider.getParkById(parkId),
+      parkDiscoveryProvider.getParkWeather(parkId),
+      parkDiscoveryProvider.getParkHours(parkId),
+      parkDiscoveryProvider.getParkAttractions(parkId),
+    ])
+      .then(([parkData, weatherData, hoursData, attractionsData]) => {
+        setPark(parkData);
+        setWeather(weatherData);
+        setHours(hoursData);
+        setAttractions(attractionsData);
       })
       .catch(() => {
         setError('Failed to load park details');
       });
   }, [parkId, parkDiscoveryProvider]);
+
+  const handleDirections = () => {
+    if (park) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${park.latitude},${park.longitude}`;
+      Linking.openURL(url);
+    }
+  };
 
   if (error) {
     return (
@@ -60,7 +95,12 @@ export function ParkDetailScreen({
   }
 
   return (
-    <View testID="park-detail-screen" style={styles.container}>
+    <ScrollView
+      testID="park-detail-screen"
+      style={styles.scrollView}
+      contentContainerStyle={styles.contentContainer}
+    >
+      {/* Photo header */}
       {park.photoUrl ? (
         <Image
           testID="park-photo"
@@ -68,46 +108,121 @@ export function ParkDetailScreen({
           style={styles.photo}
         />
       ) : (
-        <View testID="park-photo-placeholder" style={styles.placeholder}>
-          <Text>No photo available</Text>
+        <View testID="park-photo-placeholder" style={styles.photoPlaceholder}>
+          <Text style={styles.placeholderText}>No photo available</Text>
         </View>
       )}
-      <Text style={styles.name}>{park.name}</Text>
-      <Text style={styles.location}>
-        {park.city}, {park.country}
-      </Text>
-    </View>
+
+      {/* Park info */}
+      <View style={styles.infoSection}>
+        <Text style={styles.name}>{park.name}</Text>
+        <Text style={styles.location}>
+          {park.city}, {park.country}
+        </Text>
+
+        {park.address ? (
+          <Text style={styles.address}>{park.address}</Text>
+        ) : null}
+
+        {park.phone ? (
+          <Text style={styles.phone}>{park.phone}</Text>
+        ) : null}
+
+        {/* Directions button */}
+        <TouchableOpacity
+          testID="directions-button"
+          style={styles.directionsButton}
+          onPress={handleDirections}
+        >
+          <Text style={styles.directionsText}>Cómo llegar</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Weather + Hours cards row */}
+      <View style={styles.cardsRow}>
+        {weather ? <WeatherCard weather={weather} /> : null}
+        {hours ? <HoursCard hours={hours} /> : null}
+      </View>
+
+      {/* Attractions */}
+      <AttractionList attractions={attractions} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  contentContainer: {
+    paddingBottom: 32,
+  },
   container: {
     flex: 1,
     padding: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
   },
   photo: {
-    width: 300,
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 16,
+    width: '100%',
+    height: 220,
+    resizeMode: 'cover',
   },
-  placeholder: {
-    width: 300,
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 16,
-    backgroundColor: '#eee',
+  photoPlaceholder: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#ddd',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  placeholderText: {
+    fontSize: 16,
+    color: '#999',
+  },
+  infoSection: {
+    padding: 16,
+    backgroundColor: '#fff',
+    marginBottom: 12,
+  },
   name: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 8,
+    color: '#333',
+    marginBottom: 4,
   },
   location: {
     fontSize: 16,
     color: '#666',
+    marginBottom: 8,
+  },
+  address: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 4,
+  },
+  phone: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 12,
+  },
+  directionsButton: {
+    backgroundColor: '#4A90D9',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+  },
+  directionsText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  cardsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    marginBottom: 8,
   },
 });

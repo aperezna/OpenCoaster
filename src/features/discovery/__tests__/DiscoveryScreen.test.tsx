@@ -16,7 +16,7 @@ function createTestQueryClient() {
 interface RenderOptions {
   locationService?: LocationService;
   parkDiscoveryProvider?: ParkDiscoveryProvider;
-  onParkPress?: (parkId: string) => void;
+  onParkSelect?: (parkId: string) => void;
 }
 
 function renderScreen(options: RenderOptions = {}) {
@@ -30,6 +30,7 @@ function renderScreen(options: RenderOptions = {}) {
         parkDiscoveryProvider={
           options.parkDiscoveryProvider ?? new FixtureParkDiscoveryProvider()
         }
+        onParkSelect={options.onParkSelect}
       />
     </QueryClientProvider>,
   );
@@ -41,43 +42,39 @@ describe('DiscoveryScreen', () => {
     expect(screen.getByTestId('discovery-map')).toBeOnTheScreen();
   });
 
-  it('should render the search bar', async () => {
+  it('should render the floating search bar', async () => {
     await renderScreen();
     expect(screen.getByTestId('search-bar')).toBeOnTheScreen();
     expect(screen.getByTestId('search-name-input')).toBeOnTheScreen();
-    expect(screen.getByTestId('search-city-input')).toBeOnTheScreen();
+    expect(screen.getByPlaceholderText('Buscar parques...')).toBeOnTheScreen();
   });
 
-  it('should load and display all parks initially', async () => {
+  it('should display park markers on the map', async () => {
     await renderScreen();
-    // Fixture has 3 parks — should show up after query resolves
     await waitFor(() => {
-      expect(screen.getByText('Magic Kingdom')).toBeOnTheScreen();
-      expect(screen.getByText('Efteling')).toBeOnTheScreen();
+      expect(screen.getByTestId('marker-magic-kingdom')).toBeOnTheScreen();
+      expect(screen.getByTestId('marker-efteling')).toBeOnTheScreen();
     });
   });
 
-  it('should filter parks when typing in search bar', async () => {
+  it('should show search results dropdown when typing', async () => {
     await renderScreen();
-    // Wait for initial load
     await waitFor(() => {
-      expect(screen.getByText('Magic Kingdom')).toBeOnTheScreen();
+      expect(screen.getByTestId('marker-magic-kingdom')).toBeOnTheScreen();
     });
 
     // Type in search
     fireEvent.changeText(screen.getByTestId('search-name-input'), 'Efteling');
 
-    // After debounce/query refetch, only Efteling should match
     await waitFor(() => {
-      expect(screen.getByText('Efteling')).toBeOnTheScreen();
+      expect(screen.getByTestId('search-result-efteling')).toBeOnTheScreen();
     });
-    expect(screen.queryByText('Magic Kingdom')).toBeNull();
   });
 
-  it('should show no parks message when filter matches nothing', async () => {
+  it('should show no parks message when search matches nothing', async () => {
     await renderScreen();
     await waitFor(() => {
-      expect(screen.getByTestId('park-result-list')).toBeOnTheScreen();
+      expect(screen.getByTestId('marker-magic-kingdom')).toBeOnTheScreen();
     });
 
     fireEvent.changeText(screen.getByTestId('search-name-input'), 'NonExistentPark');
@@ -95,7 +92,7 @@ describe('DiscoveryScreen', () => {
     expect(screen.getByTestId('discovery-map')).toBeOnTheScreen();
     // Parks should still load (search works without location)
     await waitFor(() => {
-      expect(screen.getByText('Magic Kingdom')).toBeOnTheScreen();
+      expect(screen.getByTestId('marker-magic-kingdom')).toBeOnTheScreen();
     });
   });
 
@@ -106,7 +103,7 @@ describe('DiscoveryScreen', () => {
     // Map should still render, no crash
     expect(screen.getByTestId('discovery-map')).toBeOnTheScreen();
     await waitFor(() => {
-      expect(screen.getByText('Magic Kingdom')).toBeOnTheScreen();
+      expect(screen.getByTestId('marker-magic-kingdom')).toBeOnTheScreen();
     });
   });
 
@@ -114,5 +111,22 @@ describe('DiscoveryScreen', () => {
     await renderScreen();
     // Map renders with OSM tile layer
     expect(screen.getByTestId('discovery-map')).toBeOnTheScreen();
+  });
+
+  it('should call onParkSelect when a park is selected from search results', async () => {
+    const onParkSelect = jest.fn();
+    await renderScreen({ onParkSelect });
+    await waitFor(() => {
+      expect(screen.getByTestId('marker-magic-kingdom')).toBeOnTheScreen();
+    });
+
+    fireEvent.changeText(screen.getByTestId('search-name-input'), 'Magic');
+
+    await waitFor(() => {
+      expect(screen.getByTestId('search-result-magic-kingdom')).toBeOnTheScreen();
+    });
+
+    fireEvent.press(screen.getByTestId('search-result-magic-kingdom'));
+    expect(onParkSelect).toHaveBeenCalledWith('magic-kingdom');
   });
 });
