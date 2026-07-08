@@ -49,8 +49,8 @@ Chain strategy: pending
 
 ## Phase 5: Navigation Shell
 
-- [ ] 5.1 `src/navigation/RootNavigator.tsx` — Stack(Discovery→initial, ParkDetail, Fallback) — `app-bootstrap` R2/S3-4
-- [ ] 5.2 RED→GREEN→REFACTOR: nav mounts both screens, unknown route renders fallback
+- [x] 5.1 `src/navigation/RootNavigator.tsx` — Stack(Discovery→initial, ParkDetail, Fallback) — `app-bootstrap` R2/S3-4
+- [x] 5.2 RED→GREEN→REFACTOR: nav mounts both screens, unknown route renders fallback
 
 ## Phase 6: App Bootstrap
 
