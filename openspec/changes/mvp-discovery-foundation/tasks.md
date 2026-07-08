@@ -59,9 +59,9 @@ Chain strategy: pending
 
 ## Phase 7: Discovery Feature
 
-- [ ] 7.1 `src/features/discovery/SearchBar.tsx` — name+city inputs with onChange — `search-park` R1/S1-3
-- [ ] 7.2 `src/features/discovery/ParkResultList.tsx` — FlatList with tappable items + "No parks found" empty state — `search-park` R2/S4-5
-- [ ] 7.3 `src/features/discovery/useSearchParks.ts` — useQuery hook calling ParkDiscoveryProvider.searchParks() — `search-park` R1-2/S2-3, `cache-foundation` R3/S5
+- [x] 7.1 `src/features/discovery/SearchBar.tsx` — name+city inputs with onChange — `search-park` R1/S1-3
+- [x] 7.2 `src/features/discovery/ParkResultList.tsx` — FlatList with tappable items + "No parks found" empty state — `search-park` R2/S4-5
+- [x] 7.3 `src/features/discovery/useSearchParks.ts` — useQuery hook calling ParkDiscoveryProvider.searchParks() — `search-park` R1-2/S2-3, `cache-foundation` R3/S5
 - [ ] 7.4 `src/features/discovery/DiscoveryScreen.tsx` — composes MapView (OSM tiles) + location handling + SearchBar + ParkResultList — `map-discovery` R1-2 all scenarios, `search-park` R1-2
 - [ ] 7.5 RED→GREEN→REFACTOR: SearchBar input behavior, ParkResultList render+empty, useSearchParks hook with mock provider, DiscoveryScreen integration
 
