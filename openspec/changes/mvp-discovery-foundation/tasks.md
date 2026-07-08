@@ -54,8 +54,8 @@ Chain strategy: pending
 
 ## Phase 6: App Bootstrap
 
-- [ ] 6.1 `app/App.tsx` — QueryClientProvider + NavigationContainer + RootNavigator — `app-bootstrap` R1/S1-2, R3/S5
-- [ ] 6.2 RED→GREEN→REFACTOR: App renders without crash, TS compilation passes, query client available to screens
+- [x] 6.1 `app/App.tsx` — QueryClientProvider + NavigationContainer + RootNavigator — `app-bootstrap` R1/S1-2, R3/S5
+- [x] 6.2 RED→GREEN→REFACTOR: App renders without crash, TS compilation passes, query client available to screens
 
 ## Phase 7: Discovery Feature
 

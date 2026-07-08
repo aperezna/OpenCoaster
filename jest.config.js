@@ -2,7 +2,7 @@
 module.exports = {
   testEnvironment: 'node',
   setupFiles: ['./jest.setup.js'],
-  roots: ['<rootDir>/src', '<rootDir>/__tests__'],
+  roots: ['<rootDir>/src', '<rootDir>/__tests__', '<rootDir>/app'],
   testMatch: [
     '**/__tests__/**/*.test.ts',
     '**/__tests__/**/*.test.tsx',
