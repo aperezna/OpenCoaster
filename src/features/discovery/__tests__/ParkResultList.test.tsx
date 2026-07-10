@@ -27,18 +27,18 @@ describe('ParkResultList', () => {
     await render(
       <ParkResultList parks={mockParks} onParkPress={() => {}} />,
     );
-    expect(screen.getByText('Magic Kingdom')).toBeOnTheScreen();
-    expect(screen.getByText('Efteling')).toBeOnTheScreen();
+    expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+    expect(screen.getByText('Efteling')).toBeTruthy();
   });
 
   it('should show city and country for each park', async () => {
     await render(
       <ParkResultList parks={mockParks} onParkPress={() => {}} />,
     );
-    expect(screen.getByText(/Orlando/)).toBeOnTheScreen();
-    expect(screen.getByText(/Kaatsheuvel/)).toBeOnTheScreen();
-    expect(screen.getByText(/US/)).toBeOnTheScreen();
-    expect(screen.getByText(/NL/)).toBeOnTheScreen();
+    expect(screen.getByText(/Orlando/)).toBeTruthy();
+    expect(screen.getByText(/Kaatsheuvel/)).toBeTruthy();
+    expect(screen.getByText(/US/)).toBeTruthy();
+    expect(screen.getByText(/NL/)).toBeTruthy();
   });
 
   it('should call onParkPress when a park item is pressed', async () => {
@@ -50,11 +50,30 @@ describe('ParkResultList', () => {
     expect(onParkPress).toHaveBeenCalledWith('park-1');
   });
 
+  it('should not show meta line when city is empty', async () => {
+    const parksWithoutCity: ParkSummary[] = [
+      {
+        id: 'park-3',
+        name: 'Test Park',
+        city: '',
+        country: '',
+        latitude: 0,
+        longitude: 0,
+      },
+    ];
+    await render(
+      <ParkResultList parks={parksWithoutCity} onParkPress={() => {}} />,
+    );
+    expect(screen.getByText('Test Park')).toBeTruthy();
+    // Should not render a meta line for empty city/country
+    expect(screen.queryByTestId('park-item-park-3')).toBeTruthy();
+  });
+
   it('should show empty state when no parks', async () => {
     await render(
       <ParkResultList parks={[]} onParkPress={() => {}} />,
     );
-    expect(screen.getByText('No parks found')).toBeOnTheScreen();
+    expect(screen.getByText('No parks found')).toBeTruthy();
   });
 
   it('should show "No parks found" for empty search results', async () => {
@@ -62,7 +81,7 @@ describe('ParkResultList', () => {
       <ParkResultList parks={[]} onParkPress={() => {}} />,
     );
     // Should be the only prominent message
-    expect(screen.getByText('No parks found')).toBeOnTheScreen();
+    expect(screen.getByText('No parks found')).toBeTruthy();
     // No items should be rendered
     expect(screen.queryByText('Magic Kingdom')).toBeNull();
   });

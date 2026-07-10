@@ -37,9 +37,11 @@ export function ParkResultList({
           onPress={() => onParkPress(item.id)}
         >
           <Text style={styles.parkName}>{item.name}</Text>
-          <Text style={styles.parkCity}>
-            {item.city}, {item.country}
-          </Text>
+          {item.city ? (
+            <Text style={styles.parkMeta}>
+              {item.city}{item.country ? `, ${item.country}` : ''}
+            </Text>
+          ) : null}
         </TouchableOpacity>
       )}
     />
@@ -64,7 +66,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  parkCity: {
+  parkMeta: {
     fontSize: 14,
     color: '#666',
     marginTop: 2,

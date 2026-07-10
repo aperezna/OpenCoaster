@@ -1,13 +1,54 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, TextInput, FlatList, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import MapView, { UrlTile, Marker } from 'react-native-maps';
+import { useNavigation } from '@react-navigation/native';
+import { LeafletMap } from './LeafletMap';
 import { DEFAULT_REGION } from '../../config/constants';
 import { useSearchParks } from './useSearchParks';
 import { ExpoLocationService } from '../../data/location/ExpoLocationService';
-import { FixtureParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
+import { ThemeParksWikiProvider } from '../../data/providers/ParkDiscoveryProvider';
+import type { NavigationProp } from '@react-navigation/native';
 import type { LocationService, Coords } from '../../data/location/LocationService';
 import type { ParkDiscoveryProvider, ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
 import type { ParkSummary } from '../../data/models/ParkSummary';
+import type { RootTabParamList } from '../../navigation/RootNavigator';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Earth radius in km for Haversine distance */
+const EARTH_RADIUS_KM = 6371;
+
+/**
+ * Compute the great-circle distance in km between two coordinates using the
+ * Haversine formula.
+ */
+function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const toRad = (deg: number): number => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Format distance in km or m for display */
+function formatDistance(km: number): string {
+  if (km < 1) {
+    return `${Math.round(km * 1000)} m`;
+  }
+  return `${km.toFixed(1)} km`;
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 interface DiscoveryScreenProps {
   locationService?: LocationService;
@@ -16,7 +57,7 @@ interface DiscoveryScreenProps {
 }
 
 const defaultLocationService = new ExpoLocationService();
-const defaultParkProvider = new FixtureParkDiscoveryProvider();
+const defaultParkProvider = new ThemeParksWikiProvider();
 
 export function DiscoveryScreen({
   locationService = defaultLocationService,
@@ -25,6 +66,8 @@ export function DiscoveryScreen({
 }: DiscoveryScreenProps): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState<ParkSearchQuery>({});
   const [showResults, setShowResults] = useState(false);
+  const [userCoords, setUserCoords] = useState<Coords | null>(null);
+  const navigation = useNavigation<NavigationProp<RootTabParamList>>();
 
   useEffect(() => {
     locationService
@@ -37,11 +80,20 @@ export function DiscoveryScreen({
       })
       .then((coords: Coords | null) => {
         if (coords) {
-          // Location obtained
+          setUserCoords(coords);
+          // Once we have the user's location, auto-filter parks within 50 km
+          setSearchQuery((prev) => ({
+            ...prev,
+            proximity: {
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+              radiusKm: 50,
+            },
+          }));
         }
       })
       .catch(() => {
-        // Location error — no crash
+        // Location error — no crash, parks filter globally
       });
   }, [locationService]);
 
@@ -56,32 +108,20 @@ export function DiscoveryScreen({
     (parkId: string) => {
       setShowResults(false);
       setSearchQuery({});
+      navigation.navigate('Parques', { parkId });
       onParkSelect?.(parkId);
     },
-    [onParkSelect],
+    [navigation, onParkSelect],
   );
 
   return (
     <View testID="discovery-screen" style={styles.container}>
-      <MapView
+      <LeafletMap
         testID="discovery-map"
-        style={styles.map}
         initialRegion={DEFAULT_REGION}
-      >
-        <UrlTile urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {parks?.map((park) => (
-          <Marker
-            key={park.id}
-            testID={`marker-${park.id}`}
-            coordinate={{
-              latitude: park.latitude,
-              longitude: park.longitude,
-            }}
-            title={park.name}
-            onPress={() => handleSelectPark(park.id)}
-          />
-        ))}
-      </MapView>
+        markers={parks ?? []}
+        onMarkerPress={handleSelectPark}
+      />
 
       {/* Floating search bar */}
       <View testID="search-bar" style={styles.searchContainer}>
@@ -101,18 +141,34 @@ export function DiscoveryScreen({
           <FlatList
             data={parks}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }: { item: ParkSummary }) => (
-              <TouchableOpacity
-                testID={`search-result-${item.id}`}
-                style={styles.resultItem}
-                onPress={() => handleSelectPark(item.id)}
-              >
-                <Text style={styles.resultName}>{item.name}</Text>
-                <Text style={styles.resultCity}>
-                  {item.city}, {item.country}
-                </Text>
-              </TouchableOpacity>
-            )}
+            renderItem={({ item }: { item: ParkSummary }) => {
+              // Compute distance from user location when available
+              let subtitle = item.timezone || '';
+              if (userCoords) {
+                const dist = haversineKm(
+                  userCoords.latitude,
+                  userCoords.longitude,
+                  item.latitude,
+                  item.longitude,
+                );
+                subtitle = `${formatDistance(dist)}`;
+                if (item.timezone) {
+                  subtitle += ` · ${item.timezone.replace('_', ' ').split('/').pop()}`;
+                }
+              }
+              return (
+                <TouchableOpacity
+                  testID={`search-result-${item.id}`}
+                  style={styles.resultItem}
+                  onPress={() => handleSelectPark(item.id)}
+                >
+                  <Text style={styles.resultName}>{item.name}</Text>
+                  {subtitle ? (
+                    <Text style={styles.resultSubtitle}>{subtitle}</Text>
+                  ) : null}
+                </TouchableOpacity>
+              );
+            }}
           />
         </View>
       )}
@@ -178,7 +234,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
   },
-  resultCity: {
+  resultSubtitle: {
     fontSize: 13,
     color: '#888',
     marginTop: 2,

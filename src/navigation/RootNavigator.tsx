@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DiscoveryScreen } from '../features/discovery/DiscoveryScreen';
@@ -34,14 +34,6 @@ export function RootNavigator({
     return <FallbackView />;
   }
 
-  const [selectedParkId, setSelectedParkId] = useState<string | undefined>(undefined);
-  const [selectedTab, setSelectedTab] = useState<keyof RootTabParamList>(initialRouteName);
-
-  const handleParkSelect = useCallback((parkId: string) => {
-    setSelectedParkId(parkId);
-    setSelectedTab('Parques');
-  }, []);
-
   return (
     <Tab.Navigator
       initialRouteName={initialRouteName as keyof RootTabParamList}
@@ -49,15 +41,11 @@ export function RootNavigator({
     >
       <Tab.Screen
         name="Mapa"
-        children={() => (
-          <DiscoveryScreen onParkSelect={handleParkSelect} />
-        )}
+        children={() => <DiscoveryScreen />}
       />
       <Tab.Screen
         name="Parques"
-        children={() => (
-          <ParkDetailScreen selectedParkId={selectedParkId ?? 'magic-kingdom'} />
-        )}
+        children={() => <ParkDetailScreen />}
       />
       <Tab.Screen
         name="Usuario"

@@ -13,7 +13,11 @@ import {
 
 export interface ParkSearchQuery {
   name?: string;
-  city?: string;
+  proximity?: {
+    latitude: number;
+    longitude: number;
+    radiusKm: number;
+  };
 }
 
 export interface ParkDiscoveryProvider {
@@ -25,19 +29,56 @@ export interface ParkDiscoveryProvider {
   getUserProfile(): Promise<UserProfile>;
 }
 
+export { ThemeParksWikiProvider } from './ThemeParksWikiProvider';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Earth radius in km for Haversine distance */
+const EARTH_RADIUS_KM = 6371;
+
+/**
+ * Compute the great-circle distance in km between two coordinates using the
+ * Haversine formula.
+ */
+function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const toRad = (deg: number): number => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export class FixtureParkDiscoveryProvider implements ParkDiscoveryProvider {
   async searchParks(query: ParkSearchQuery): Promise<ParkSummary[]> {
-    const { name, city } = query;
+    const { name, proximity } = query;
 
-    return fixtureParks.filter((park) => {
-      if (name && !park.name.toLowerCase().includes(name.toLowerCase())) {
-        return false;
-      }
-      if (city && !park.city.toLowerCase().includes(city.toLowerCase())) {
-        return false;
-      }
-      return true;
-    });
+    let results = fixtureParks;
+
+    // Apply name filter (case-insensitive)
+    if (name) {
+      const q = name.toLowerCase();
+      results = results.filter((p) => p.name.toLowerCase().includes(q));
+    }
+
+    // Apply proximity filter (Haversine distance in km)
+    if (proximity) {
+      const { latitude, longitude, radiusKm } = proximity;
+      results = results.filter(
+        (p) =>
+          haversineKm(latitude, longitude, p.latitude, p.longitude) <= radiusKm,
+      );
+    }
+
+    return results;
   }
 
   async getParkById(parkId: string): Promise<ParkSummary | null> {

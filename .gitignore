@@ -4,3 +4,19 @@ coverage/
 .env
 .env.local
 *.tsbuildinfo
+
+# Expo
+.expo/
+.expo-test/
+*.hbc
+*.hbc.map
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

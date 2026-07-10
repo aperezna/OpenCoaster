@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
-import { App } from '../App';
+import { App } from '../../App';
 
 describe('App', () => {
   it('should render without crashing', async () => {
     await render(<App />);
     // The initial route is Discovery
-    expect(screen.getByTestId('discovery-screen')).toBeOnTheScreen();
+    expect(screen.getByTestId('discovery-screen')).toBeTruthy();
   });
 
   it('should provide query client context to screens', async () => {

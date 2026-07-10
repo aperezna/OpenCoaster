@@ -42,8 +42,8 @@ describe('FixtureParkDiscoveryProvider', () => {
     expect(results.length).toBe(fixtureParks.length);
   });
 
-  it('should return all parks when name and city are undefined', async () => {
-    const results = await provider.searchParks({ name: undefined, city: undefined });
+  it('should return all parks when name is undefined', async () => {
+    const results = await provider.searchParks({ name: undefined });
     expect(results.length).toBe(fixtureParks.length);
   });
 
@@ -53,23 +53,6 @@ describe('FixtureParkDiscoveryProvider', () => {
     expect(results.every((p: ParkSummary) =>
       p.name.toLowerCase().includes('magic kingdom')
     )).toBe(true);
-  });
-
-  it('should filter by city', async () => {
-    const results = await provider.searchParks({ city: 'Orlando' });
-    expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results.every((p: ParkSummary) =>
-      p.city.toLowerCase().includes('orlando')
-    )).toBe(true);
-  });
-
-  it('should filter by combined name and city', async () => {
-    const results = await provider.searchParks({ name: 'Magic', city: 'Orlando' });
-    expect(results.length).toBeGreaterThanOrEqual(1);
-    for (const park of results) {
-      expect(park.name.toLowerCase()).toContain('magic');
-      expect(park.city.toLowerCase()).toContain('orlando');
-    }
   });
 
   it('should return empty array when no park matches', async () => {
@@ -82,13 +65,27 @@ describe('FixtureParkDiscoveryProvider', () => {
     expect(results.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('should do case-insensitive city search', async () => {
-    const results = await provider.searchParks({ city: 'orlando' });
-    expect(results.length).toBeGreaterThanOrEqual(1);
-  });
-
   it('should do partial name matching', async () => {
     const results = await provider.searchParks({ name: 'Magic' });
     expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should filter by proximity radius', async () => {
+    // Orlando Magic Kingdom: 28.416, -81.581
+    // Efteling: 51.65, 5.05 — ~7300 km from Orlando
+    // Using a point near Orlando (28.4, -81.6) with 10km radius should return Magic Kingdom
+    const results = await provider.searchParks({
+      proximity: { latitude: 28.4, longitude: -81.6, radiusKm: 10 },
+    });
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    expect(results.every((p: ParkSummary) => p.id === 'magic-kingdom' || p.id === 'epcot' || p.id === 'hollywood-studios' || p.id === 'animal-kingdom')).toBe(true);
+  });
+
+  it('should filter by proximity radius returning no results far away', async () => {
+    // Point in the Pacific Ocean far from any fixture park
+    const results = await provider.searchParks({
+      proximity: { latitude: 0, longitude: -150, radiusKm: 100 },
+    });
+    expect(results).toEqual([]);
   });
 });

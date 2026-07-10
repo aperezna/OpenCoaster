@@ -8,7 +8,8 @@ import {
   Linking,
   StyleSheet,
 } from 'react-native';
-import { FixtureParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
+import { useRoute } from '@react-navigation/native';
+import { ThemeParksWikiProvider } from '../../data/providers/ParkDiscoveryProvider';
 import { WeatherCard } from './WeatherCard';
 import { HoursCard } from './HoursCard';
 import { AttractionList } from './AttractionList';
@@ -17,27 +18,21 @@ import type { ParkSummary } from '../../data/models/ParkSummary';
 import type { ParkWeather } from '../../data/models/ParkWeather';
 import type { ParkHours } from '../../data/models/ParkHours';
 import type { Attraction } from '../../data/models/Attraction';
+import type { RouteProp } from '@react-navigation/native';
+import type { RootTabParamList } from '../../navigation/RootNavigator';
 
 interface ParkDetailScreenProps {
-  route?: {
-    key: string;
-    name: string;
-    params: { parkId?: string };
-  };
   parkDiscoveryProvider?: ParkDiscoveryProvider;
-  selectedParkId?: string;
 }
 
-const defaultParkProvider = new FixtureParkDiscoveryProvider();
-const DEFAULT_PARK_ID = 'magic-kingdom';
+const defaultParkProvider = new ThemeParksWikiProvider();
+const DEFAULT_PARK_ID = '75ea578a-adc8-4116-a54d-dccb60765ef9'; // Magic Kingdom Park
 
 export function ParkDetailScreen({
-  route,
   parkDiscoveryProvider = defaultParkProvider,
-  selectedParkId,
 }: ParkDetailScreenProps): React.JSX.Element {
-  const parkId =
-    selectedParkId ?? route?.params?.parkId ?? DEFAULT_PARK_ID;
+  const route = useRoute<RouteProp<RootTabParamList, 'Parques'>>();
+  const parkId = route.params?.parkId ?? DEFAULT_PARK_ID;
 
   const [park, setPark] = useState<ParkSummary | null | undefined>(undefined);
   const [weather, setWeather] = useState<ParkWeather | null>(null);

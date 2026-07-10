@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { FixtureParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
+import { ThemeParksWikiProvider } from '../../data/providers/ParkDiscoveryProvider';
 import type { UserProfile } from '../../data/models/UserProfile';
 import type { ParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
 
@@ -8,7 +8,7 @@ interface ProfileScreenProps {
   parkDiscoveryProvider?: ParkDiscoveryProvider;
 }
 
-const defaultProvider = new FixtureParkDiscoveryProvider();
+const defaultProvider = new ThemeParksWikiProvider();
 
 export function ProfileScreen({
   parkDiscoveryProvider = defaultProvider,

@@ -27,6 +27,7 @@ module.exports = {
     '^expo-location$':
       '<rootDir>/src/data/location/__tests__/FakeLocationService.ts',
     '^react-native-maps$': '<rootDir>/__mocks__/react-native-maps.ts',
+    '^react-native-webview$': '<rootDir>/__mocks__/react-native-webview.js',
     '^react-native-screens$': '<rootDir>/__mocks__/react-native-screens.ts',
     '^react-native-safe-area-context$':
       '<rootDir>/__mocks__/react-native-safe-area-context.ts',
