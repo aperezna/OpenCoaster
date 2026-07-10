@@ -11,30 +11,33 @@ workflow:
   review_budget_lines: 800
 
 context: |
-  Stack intent: Expo + React Native + TypeScript for an Android MVP.
-  Maps: react-native-maps.
-  Data: TanStack Query or another lightweight typed cache.
-  Security: no secrets in source; use local env vars only.
-  Status: repository is empty; stack is planned policy, not yet bootstrapped code.
+  Expo + React Native + TypeScript Android MVP (Expo 52, RN 0.76).
+  Navigation: React Navigation (native-stack + bottom-tabs).
+  Data: TanStack Query v5 + in-memory StorageAdapter.
+  Maps: react-native-maps (OSM UrlTile via WebView).
+  Location: expo-location with LocationService interface + test double.
+  Architecture: feature-first under src/features/, shared data layer under src/data/.
+  One SDD change completed (mvp-discovery-foundation, archived).
+  No secrets in source; use local env vars only.
 
 testing:
   strict_tdd: true
-  source: external config adopted partially; runner adjusted for Expo compatibility
-  detected: 2026-07-07
+  source: detected from runner existence (Jest configured with 70 tests passing)
+  detected: 2026-07-10
   runner:
-    available: false
-    framework: Jest + jest-expo
-    rationale: Expo documentation recommends Jest-based unit testing; Vitest jsdom was not adopted for native-focused MVP bootstrap.
+    available: true
+    framework: Jest + jest-expo + @testing-library/react-native
+    rationale: Jest with ts-jest and jest-expo preset for Expo native mocking compatibility.
     commands:
-      test: npx jest
+      test: npx jest --passWithNoTests
       watch: npx jest --watch
       coverage: npx jest --coverage
   layers:
     unit:
-      available: false
+      available: true
       tool: Jest
     integration:
-      available: false
+      available: true
       tool: '@testing-library/react-native'
     e2e:
       available: false
@@ -44,7 +47,7 @@ testing:
       available: false
       command: npx eslint .
     type_checker:
-      available: false
+      available: true
       command: npx tsc --noEmit
     formatter:
       available: false
@@ -87,3 +90,8 @@ adoption_notes:
     - sdd.spec_path=./specs
     - sdd.design_path=./design
     - sdd.review_budget_lines=400
+  init_updated: 2026-07-10
+  changes:
+    - testing.*.available: false → true for unit, integration, type_checker
+    - context: updated from planned-only to reflect actual codebase state
+    - detected date: 2026-07-07 → 2026-07-10

@@ -1,12 +1,13 @@
 # Skill Registry
 
 Generated for project: `OpenCoaster`
-Detected on: `2026-07-07`
+Detected on: `2026-07-10`
 
 ## Project Conventions
 
 - No project-local skill directories detected.
 - No project convention files detected (`AGENTS.md`, `agents.md`, `CLAUDE.md`, `.cursorrules`, `GEMINI.md`, `copilot-instructions.md`).
+- User-level convention file: `C:\Users\apere\.config\opencode\AGENTS.md`
 
 ## Available Skills
 
@@ -16,7 +17,7 @@ Detected on: `2026-07-07`
 | chained-pr | Trigger: PRs over 400 lines, stacked PRs, review slices. Split oversized changes into chained PRs that protect review focus. | user | `C:\Users\apere\.config\opencode\skills\chained-pr\SKILL.md` |
 | cognitive-doc-design | Design docs that reduce cognitive load. Trigger: writing guides, READMEs, RFCs, onboarding, architecture, or review-facing docs. | user | `C:\Users\apere\.config\opencode\skills\cognitive-doc-design\SKILL.md` |
 | comment-writer | Write warm, direct collaboration comments. Trigger: PR feedback, issue replies, reviews, Slack messages, or GitHub comments. | user | `C:\Users\apere\.config\opencode\skills\comment-writer\SKILL.md` |
-| customize-opencode | Use ONLY when editing opencode configuration, agents, skills, plugins, MCP servers, or permission rules. | built-in | `<built-in>` |
+| customize-opencode | Use ONLY when editing opencode configuration, agents, subagents, skills, plugins, MCP servers, or permission rules. | built-in | `<built-in>` |
 | go-testing | Trigger: Go tests, go test coverage, Bubbletea teatest, golden files. Apply focused Go testing patterns. | user | `C:\Users\apere\.config\opencode\skills\go-testing\SKILL.md` |
 | issue-creation | Create Gentle AI issues with issue-first checks. Trigger: creating GitHub issues, bug reports, or feature requests. | user | `C:\Users\apere\.config\opencode\skills\issue-creation\SKILL.md` |
 | judgment-day | Trigger: judgment day, dual review, adversarial review, juzgar. Run blind dual review, fix confirmed issues, then re-judge. | user | `C:\Users\apere\.config\opencode\skills\judgment-day\SKILL.md` |
@@ -27,4 +28,4 @@ Detected on: `2026-07-07`
 ## Registry Rules
 
 - This registry is an index only; each `SKILL.md` file remains the source of truth.
-- SDD orchestration skills are intentionally excluded from this registry scan output.
+- SDD orchestration skills (`sdd-*`), `_shared`, and `skill-registry` are intentionally excluded from this registry scan output.

@@ -3,9 +3,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react-nativ
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DiscoveryScreen } from '../DiscoveryScreen';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
+import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscoveryProviderContext';
 import { FakeLocationService } from '../../../data/location/__tests__/FakeLocationService';
 import type { LocationService } from '../../../data/location/LocationService';
-import type { ParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
 
 function createTestQueryClient() {
   return new QueryClient({
@@ -15,23 +15,22 @@ function createTestQueryClient() {
 
 interface RenderOptions {
   locationService?: LocationService;
-  parkDiscoveryProvider?: ParkDiscoveryProvider;
   onParkSelect?: (parkId: string) => void;
 }
 
 function renderScreen(options: RenderOptions = {}) {
   const queryClient = createTestQueryClient();
+  const fixture = new FixtureParkDiscoveryProvider();
   return render(
     <QueryClientProvider client={queryClient}>
-      <DiscoveryScreen
-        locationService={
-          options.locationService ?? new FakeLocationService('granted', { latitude: 28.4, longitude: -81.6 })
-        }
-        parkDiscoveryProvider={
-          options.parkDiscoveryProvider ?? new FixtureParkDiscoveryProvider()
-        }
-        onParkSelect={options.onParkSelect}
-      />
+      <ParkDiscoveryContextProvider provider={fixture}>
+        <DiscoveryScreen
+          locationService={
+            options.locationService ?? new FakeLocationService('granted', { latitude: 28.4, longitude: -81.6 })
+          }
+          onParkSelect={options.onParkSelect}
+        />
+      </ParkDiscoveryContextProvider>
     </QueryClientProvider>,
   );
 }

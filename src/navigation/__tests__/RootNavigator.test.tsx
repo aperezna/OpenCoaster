@@ -2,6 +2,8 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react-native';
 import { RootNavigator, type RootTabParamList } from '../RootNavigator';
+import { ParkDiscoveryContextProvider } from '../../data/providers/ParkDiscoveryProviderContext';
+import { FixtureParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
 
 function createTestQueryClient() {
   return new QueryClient({
@@ -13,9 +15,12 @@ async function renderNavigator(
   initialRouteName?: keyof RootTabParamList,
 ) {
   const queryClient = createTestQueryClient();
+  const fixture = new FixtureParkDiscoveryProvider();
   return render(
     <QueryClientProvider client={queryClient}>
-      <RootNavigator initialRouteName={initialRouteName} />
+      <ParkDiscoveryContextProvider provider={fixture}>
+        <RootNavigator initialRouteName={initialRouteName} />
+      </ParkDiscoveryContextProvider>
     </QueryClientProvider>,
   );
 }
@@ -33,9 +38,12 @@ describe('RootNavigator', () => {
 
   it('should render fallback view for unknown route', async () => {
     const queryClient = createTestQueryClient();
+    const fixture = new FixtureParkDiscoveryProvider();
     await render(
       <QueryClientProvider client={queryClient}>
-        <RootNavigator initialRouteName={'Unknown' as keyof RootTabParamList} />
+        <ParkDiscoveryContextProvider provider={fixture}>
+          <RootNavigator initialRouteName={'Unknown' as keyof RootTabParamList} />
+        </ParkDiscoveryContextProvider>
       </QueryClientProvider>,
     );
     expect(screen.getByTestId('fallback-view')).toBeOnTheScreen();

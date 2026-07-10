@@ -1,7 +1,9 @@
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import { ParkDetailScreen } from '../ParkDetailScreen';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
+import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscoveryProviderContext';
 
 const mockUseRoute = jest.fn();
 
@@ -9,6 +11,23 @@ jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useRoute: () => mockUseRoute(),
 }));
+
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+}
+
+function renderWithProviders(provider = new FixtureParkDiscoveryProvider()) {
+  const queryClient = createTestQueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ParkDiscoveryContextProvider provider={provider}>
+        <ParkDetailScreen />
+      </ParkDiscoveryContextProvider>
+    </QueryClientProvider>,
+  );
+}
 
 describe('ParkDetailScreen', () => {
   beforeEach(() => {
@@ -20,10 +39,7 @@ describe('ParkDetailScreen', () => {
   });
 
   it('should show park name and city when park exists', async () => {
-    const provider = new FixtureParkDiscoveryProvider();
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(screen.getByText('Magic Kingdom')).toBeTruthy();
     });
@@ -37,20 +53,14 @@ describe('ParkDetailScreen', () => {
       name: 'Parques',
       params: { parkId: 'efteling' },
     });
-    const provider = new FixtureParkDiscoveryProvider();
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(screen.getByTestId('park-photo-placeholder')).toBeTruthy();
     });
   });
 
   it('should show park photo when park has photoUrl', async () => {
-    const provider = new FixtureParkDiscoveryProvider();
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(screen.getByTestId('park-photo')).toBeTruthy();
     });
@@ -62,20 +72,14 @@ describe('ParkDetailScreen', () => {
       name: 'Parques',
       params: { parkId: 'non-existent-park' },
     });
-    const provider = new FixtureParkDiscoveryProvider();
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(screen.getByText('Park not found')).toBeTruthy();
     });
   });
 
   it('should show address and phone for park with contact info', async () => {
-    const provider = new FixtureParkDiscoveryProvider();
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(screen.getByText(/1180 Seven Seas/)).toBeTruthy();
     });
@@ -83,40 +87,28 @@ describe('ParkDetailScreen', () => {
   });
 
   it('should render the directions button', async () => {
-    const provider = new FixtureParkDiscoveryProvider();
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(screen.getByTestId('directions-button')).toBeTruthy();
     });
   });
 
   it('should show weather card for park', async () => {
-    const provider = new FixtureParkDiscoveryProvider();
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(screen.getByTestId('weather-card')).toBeTruthy();
     });
   });
 
   it('should show hours card for park', async () => {
-    const provider = new FixtureParkDiscoveryProvider();
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(screen.getByTestId('hours-card')).toBeTruthy();
     });
   });
 
   it('should show attractions list for park', async () => {
-    const provider = new FixtureParkDiscoveryProvider();
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(screen.getByTestId('attraction-list')).toBeTruthy();
     });
@@ -129,13 +121,10 @@ describe('ParkDetailScreen', () => {
       name: 'Parques',
       params: {},
     });
-    const provider = new FixtureParkDiscoveryProvider();
     // When no parkId is in route params, it falls back to DEFAULT_PARK_ID
     // (the real default is a GUID, which fixtures don't know, so it shows "Park not found")
     // This test verifies the fallback chain works without crashing
-    await render(
-      <ParkDetailScreen parkDiscoveryProvider={provider} />,
-    );
+    renderWithProviders();
     await waitFor(() => {
       expect(
         screen.getByText('Park not found'),

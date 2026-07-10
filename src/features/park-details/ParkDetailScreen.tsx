@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,54 +9,25 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { ThemeParksWikiProvider } from '../../data/providers/ParkDiscoveryProvider';
+import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
+import { useParkDetail } from './useParkDetail';
 import { WeatherCard } from './WeatherCard';
 import { HoursCard } from './HoursCard';
 import { AttractionList } from './AttractionList';
-import type { ParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
-import type { ParkSummary } from '../../data/models/ParkSummary';
-import type { ParkWeather } from '../../data/models/ParkWeather';
-import type { ParkHours } from '../../data/models/ParkHours';
-import type { Attraction } from '../../data/models/Attraction';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootTabParamList } from '../../navigation/RootNavigator';
 
-interface ParkDetailScreenProps {
-  parkDiscoveryProvider?: ParkDiscoveryProvider;
-}
-
-const defaultParkProvider = new ThemeParksWikiProvider();
 const DEFAULT_PARK_ID = '75ea578a-adc8-4116-a54d-dccb60765ef9'; // Magic Kingdom Park
 
-export function ParkDetailScreen({
-  parkDiscoveryProvider = defaultParkProvider,
-}: ParkDetailScreenProps): React.JSX.Element {
+export function ParkDetailScreen(): React.JSX.Element {
   const route = useRoute<RouteProp<RootTabParamList, 'Parques'>>();
   const parkId = route.params?.parkId ?? DEFAULT_PARK_ID;
+  const provider = useParkDiscoveryProvider();
 
-  const [park, setPark] = useState<ParkSummary | null | undefined>(undefined);
-  const [weather, setWeather] = useState<ParkWeather | null>(null);
-  const [hours, setHours] = useState<ParkHours | null>(null);
-  const [attractions, setAttractions] = useState<Attraction[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    Promise.all([
-      parkDiscoveryProvider.getParkById(parkId),
-      parkDiscoveryProvider.getParkWeather(parkId),
-      parkDiscoveryProvider.getParkHours(parkId),
-      parkDiscoveryProvider.getParkAttractions(parkId),
-    ])
-      .then(([parkData, weatherData, hoursData, attractionsData]) => {
-        setPark(parkData);
-        setWeather(weatherData);
-        setHours(hoursData);
-        setAttractions(attractionsData);
-      })
-      .catch(() => {
-        setError('Failed to load park details');
-      });
-  }, [parkId, parkDiscoveryProvider]);
+  const { park, weather, hours, attractions, isLoading, isParkLoading, error } = useParkDetail(
+    parkId,
+    provider,
+  );
 
   const handleDirections = () => {
     if (park) {
@@ -68,12 +39,12 @@ export function ParkDetailScreen({
   if (error) {
     return (
       <View testID="park-detail-screen" style={styles.container}>
-        <Text>{error}</Text>
+        <Text>{error.message}</Text>
       </View>
     );
   }
 
-  if (park === undefined) {
+  if (isParkLoading) {
     return (
       <View testID="park-detail-screen" style={styles.container}>
         <Text>Loading...</Text>
@@ -81,7 +52,7 @@ export function ParkDetailScreen({
     );
   }
 
-  if (park === null) {
+  if (!park) {
     return (
       <View testID="park-detail-screen" style={styles.container}>
         <Text>Park not found</Text>
@@ -140,7 +111,7 @@ export function ParkDetailScreen({
       </View>
 
       {/* Attractions */}
-      <AttractionList attractions={attractions} />
+      <AttractionList attractions={attractions ?? []} />
     </ScrollView>
   );
 }

@@ -5,10 +5,10 @@ import { LeafletMap } from './LeafletMap';
 import { DEFAULT_REGION } from '../../config/constants';
 import { useSearchParks } from './useSearchParks';
 import { ExpoLocationService } from '../../data/location/ExpoLocationService';
-import { ThemeParksWikiProvider } from '../../data/providers/ParkDiscoveryProvider';
+import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import type { NavigationProp } from '@react-navigation/native';
 import type { LocationService, Coords } from '../../data/location/LocationService';
-import type { ParkDiscoveryProvider, ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
+import type { ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
 import type { ParkSummary } from '../../data/models/ParkSummary';
 import type { RootTabParamList } from '../../navigation/RootNavigator';
 
@@ -52,22 +52,20 @@ function formatDistance(km: number): string {
 
 interface DiscoveryScreenProps {
   locationService?: LocationService;
-  parkDiscoveryProvider?: ParkDiscoveryProvider;
   onParkSelect?: (parkId: string) => void;
 }
 
 const defaultLocationService = new ExpoLocationService();
-const defaultParkProvider = new ThemeParksWikiProvider();
 
 export function DiscoveryScreen({
   locationService = defaultLocationService,
-  parkDiscoveryProvider = defaultParkProvider,
   onParkSelect,
 }: DiscoveryScreenProps): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState<ParkSearchQuery>({});
   const [showResults, setShowResults] = useState(false);
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
   const navigation = useNavigation<NavigationProp<RootTabParamList>>();
+  const provider = useParkDiscoveryProvider();
 
   useEffect(() => {
     locationService
@@ -97,7 +95,7 @@ export function DiscoveryScreen({
       });
   }, [locationService]);
 
-  const { parks } = useSearchParks(searchQuery, parkDiscoveryProvider);
+  const { parks } = useSearchParks(searchQuery, provider);
 
   const handleNameChange = useCallback((text: string) => {
     setSearchQuery((prev) => ({ ...prev, name: text }));

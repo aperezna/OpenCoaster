@@ -1,23 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ThemeParksWikiProvider } from '../../data/providers/ParkDiscoveryProvider';
+import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import type { UserProfile } from '../../data/models/UserProfile';
-import type { ParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
 
-interface ProfileScreenProps {
-  parkDiscoveryProvider?: ParkDiscoveryProvider;
-}
-
-const defaultProvider = new ThemeParksWikiProvider();
-
-export function ProfileScreen({
-  parkDiscoveryProvider = defaultProvider,
-}: ProfileScreenProps): React.JSX.Element {
+export function ProfileScreen(): React.JSX.Element {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const provider = useParkDiscoveryProvider();
 
   useEffect(() => {
-    parkDiscoveryProvider.getUserProfile().then(setProfile);
-  }, [parkDiscoveryProvider]);
+    provider.getUserProfile().then(setProfile);
+  }, [provider]);
 
   if (!profile) {
     return (
