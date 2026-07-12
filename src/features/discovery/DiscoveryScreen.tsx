@@ -117,6 +117,7 @@ export function DiscoveryScreen({
         initialRegion={DEFAULT_REGION}
         markers={parks ?? []}
         onMarkerPress={handleSelectPark}
+        userLocation={userCoords}
       />
 
       {/* Floating search bar */}
