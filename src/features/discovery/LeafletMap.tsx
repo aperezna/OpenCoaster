@@ -29,7 +29,10 @@ function buildMapHtml(initialRegion: {
   <style>
     * { margin: 0; padding: 0; }
     html, body, #map { width: 100%; height: 100%; }
-    .park-popup .popup-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .park-popup { min-width: 180px; }
+    .park-popup .popup-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; color: #222; }
+    .park-popup .popup-location { font-size: 12px; color: #666; margin-bottom: 4px; }
+    .park-popup .popup-distance { font-size: 12px; color: #007AFF; font-weight: 500; margin-bottom: 8px; }
     .park-popup .popup-btn {
       display: inline-block;
       background: #007AFF;
@@ -39,6 +42,9 @@ function buildMapHtml(initialRegion: {
       font-size: 13px;
       cursor: pointer;
       border: none;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
     }
   </style>
 </head>
@@ -48,7 +54,7 @@ function buildMapHtml(initialRegion: {
     var map = L.map('map', {
       zoomControl: true,
       attributionControl: false,
-    }).setView([${initialRegion.latitude}, ${initialRegion.longitude}], 5);
+    }).setView([${initialRegion.latitude}, ${initialRegion.longitude}], 3);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -70,7 +76,7 @@ function buildMapHtml(initialRegion: {
       if (clusterGroup.getLayers().length === 0) return;
       var bounds = clusterGroup.getBounds();
       if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 6 });
         hasBounds = true;
       }
     }
@@ -85,12 +91,17 @@ function buildMapHtml(initialRegion: {
 
           data.markers.forEach(function(park) {
             var marker = L.marker([park.latitude, park.longitude]);
-            marker.bindPopup(
-              '<div class="park-popup">' +
-                '<div class="popup-name">' + park.name + '</div>' +
-                '<button class="popup-btn" id="view-park-' + park.id + '">Ver m&aacute;s</button>' +
-              '</div>'
-            );
+            var popupHtml = '<div class="park-popup">' +
+              '<div class="popup-name">' + park.name + '</div>';
+            if (park.city && park.country) {
+              popupHtml += '<div class="popup-location">' + park.city + ', ' + park.country + '</div>';
+            }
+            if (park.distanceText) {
+              popupHtml += '<div class="popup-distance">' + park.distanceText + '</div>';
+            }
+            popupHtml += '<button class="popup-btn" id="view-park-' + park.id + '">Ver m&aacute;s</button>' +
+              '</div>';
+            marker.bindPopup(popupHtml);
 
             marker.on('popupopen', function() {
               setTimeout(function() {
@@ -144,12 +155,39 @@ function buildMapHtml(initialRegion: {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Earth radius in km for Haversine distance */
+const EARTH_RADIUS_KM = 6371;
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (deg: number): number => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(km: number): string {
+  if (km < 1) {
+    return `${Math.round(km * 1000)} m`;
+  }
+  return `${km.toFixed(1)} km`;
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 interface ParkMarker {
   id: string;
   name: string;
+  city: string;
+  country: string;
+  distanceText?: string;
   latitude: number;
   longitude: number;
 }
@@ -192,14 +230,28 @@ export function LeafletMap({
   // Send markers to the web view when they change
   useEffect(() => {
     if (markers.length === 0) return;
-    const parkMarkers: ParkMarker[] = markers.map((p) => ({
-      id: p.id,
-      name: p.name,
-      latitude: p.latitude,
-      longitude: p.longitude,
-    }));
+    const parkMarkers: ParkMarker[] = markers.map((p) => {
+      const marker: ParkMarker = {
+        id: p.id,
+        name: p.name,
+        city: p.city,
+        country: p.country,
+        latitude: p.latitude,
+        longitude: p.longitude,
+      };
+      if (userLocation) {
+        const dist = haversineKm(
+          userLocation.latitude,
+          userLocation.longitude,
+          p.latitude,
+          p.longitude,
+        );
+        marker.distanceText = formatDistance(dist);
+      }
+      return marker;
+    });
     sendToMap({ type: 'setMarkers', markers: parkMarkers });
-  }, [markers, sendToMap]);
+  }, [markers, userLocation, sendToMap]);
 
   // Send user location when it changes
   useEffect(() => {
@@ -221,12 +273,26 @@ export function LeafletMap({
           isReadyRef.current = true;
           // Send initial markers + user location
           if (markers.length > 0) {
-            const parkMarkers: ParkMarker[] = markers.map((p) => ({
-              id: p.id,
-              name: p.name,
-              latitude: p.latitude,
-              longitude: p.longitude,
-            }));
+            const parkMarkers: ParkMarker[] = markers.map((p) => {
+              const marker: ParkMarker = {
+                id: p.id,
+                name: p.name,
+                city: p.city,
+                country: p.country,
+                latitude: p.latitude,
+                longitude: p.longitude,
+              };
+              if (userLocation) {
+                const dist = haversineKm(
+                  userLocation.latitude,
+                  userLocation.longitude,
+                  p.latitude,
+                  p.longitude,
+                );
+                marker.distanceText = formatDistance(dist);
+              }
+              return marker;
+            });
             sendToMap({ type: 'setMarkers', markers: parkMarkers });
           }
           if (userLocation) {

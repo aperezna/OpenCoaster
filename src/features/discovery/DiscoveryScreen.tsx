@@ -8,7 +8,7 @@ import { useSearchParks } from './useSearchParks';
 import { ExpoLocationService } from '../../data/location/ExpoLocationService';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import ErrorState from '../../components/ErrorState';
-import type { NavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { LocationService, Coords } from '../../data/location/LocationService';
 import type { ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
 import type { ParkSummary } from '../../data/models/ParkSummary';
@@ -64,7 +64,8 @@ export function DiscoveryScreen({
   const [searchQuery, setSearchQuery] = useState<ParkSearchQuery>({});
   const [showResults, setShowResults] = useState(false);
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
-  const navigation = useNavigation<NavigationProp<RootTabParamList>>();
+  const [proximityEnabled, setProximityEnabled] = useState(false);
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const provider = useParkDiscoveryProvider();
 
   useEffect(() => {
@@ -79,21 +80,36 @@ export function DiscoveryScreen({
       .then((coords: Coords | null) => {
         if (coords) {
           setUserCoords(coords);
-          // Once we have the user's location, auto-filter parks within 50 km
-          setSearchQuery((prev) => ({
-            ...prev,
-            proximity: {
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              radiusKm: 50,
-            },
-          }));
+          // No auto-proximity filter — show ALL parks by default
         }
       })
       .catch(() => {
-        // Location error — no crash, parks filter globally
+        // Location error — no crash, parks load globally
       });
   }, [locationService]);
+
+  // Sync proximityEnabled state into the search query
+  useEffect(() => {
+    setSearchQuery((prev) => {
+      if (proximityEnabled && userCoords) {
+        return {
+          ...prev,
+          proximity: {
+            latitude: userCoords.latitude,
+            longitude: userCoords.longitude,
+            radiusKm: 100,
+          },
+        };
+      }
+      // Remove proximity filter but keep other query params
+      const { proximity: _p, ...rest } = prev;
+      return rest;
+    });
+  }, [proximityEnabled, userCoords]);
+
+  const handleToggleProximity = useCallback(() => {
+    setProximityEnabled((prev) => !prev);
+  }, []);
 
   const { parks, error, refetch } = useSearchParks(searchQuery, provider);
 
@@ -106,7 +122,7 @@ export function DiscoveryScreen({
     (parkId: string) => {
       setShowResults(false);
       setSearchQuery({});
-      (navigation.navigate as unknown as (name: string, params: unknown) => void)('Parques', {
+      navigation.navigate('Parques', {
         screen: 'ParkDetail',
         params: { parkId },
       });
@@ -124,6 +140,30 @@ export function DiscoveryScreen({
         onMarkerPress={handleSelectPark}
         userLocation={userCoords}
       />
+
+      {/* Proximity toggle */}
+      {userCoords && (
+        <View testID="proximity-toggle" style={styles.proximityToggle}>
+          <TouchableOpacity
+            testID="proximity-toggle-button"
+            style={[
+              styles.proximityToggleButton,
+              proximityEnabled && styles.proximityToggleButtonActive,
+            ]}
+            onPress={handleToggleProximity}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.proximityToggleText,
+                proximityEnabled && styles.proximityToggleTextActive,
+              ]}
+            >
+              {proximityEnabled ? 'Todo el mundo' : 'Cerca de mí'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Floating search bar */}
       <View testID="search-bar" style={styles.searchContainer}>
@@ -201,11 +241,42 @@ function createStyles(colors: ThemeColors) {
       width: '100%',
       height: '100%',
     },
+    proximityToggle: {
+      position: 'absolute',
+      top: 8,
+      right: 12,
+      zIndex: 10,
+    },
+    proximityToggleButton: {
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: '#ddd',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.12,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    proximityToggleButtonActive: {
+      backgroundColor: '#007AFF',
+      borderColor: '#007AFF',
+    },
+    proximityToggleText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#333',
+    },
+    proximityToggleTextActive: {
+      color: '#fff',
+    },
     searchContainer: {
       position: 'absolute',
       top: 8,
       left: 12,
-      right: 12,
+      right: 100,
     },
     searchInput: {
       backgroundColor: colors.surface,
