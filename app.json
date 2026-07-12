@@ -32,7 +32,8 @@
           "locationAlwaysAndWhenInUsePermission": "OpenCoaster needs your location to show nearby parks.",
           "locationWhenInUsePermission": "OpenCoaster needs your location to show nearby parks."
         }
-      ]
+      ],
+      "@sentry/react-native"
     ]
   }
 }

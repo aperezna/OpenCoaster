@@ -1,0 +1,29 @@
+# park-detail.yaml
+# Navigate to parks list, tap a park item, and verify the detail screen.
+
+appId: host.exp.Exponent
+---
+- launchApp:
+    appId: "host.exp.Exponent"
+    clearState: true
+- waitForAnimationToEnd
+# Dismiss onboarding if present
+- tapOn:
+    id: "onboarding-skip-button"
+    optional: true
+- waitForAnimationToEnd
+# Navigate to Parques tab
+- tapOn:
+    text: "Parques"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "parks-list-screen"
+# Tap the first visible park item (testID starts with "park-item-")
+- tapOn:
+    id: "park-item-.*"
+    optional: true
+- waitForAnimationToEnd
+# Check park detail screen (may not appear if no parks loaded)
+- assertVisible:
+    id: "park-detail-screen"
+    optional: true

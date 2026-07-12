@@ -1,0 +1,18 @@
+# launch.yaml
+# App launches to discovery screen (dismiss onboarding carousel if present).
+
+appId: host.exp.Exponent
+---
+- launchApp:
+    appId: "host.exp.Exponent"
+    clearState: true
+- waitForAnimationToEnd
+# Dismiss onboarding carousel if visible on first launch
+- tapOn:
+    id: "onboarding-skip-button"
+    optional: true
+- waitForAnimationToEnd
+- assertVisible:
+    id: "discovery-screen"
+- assertVisible:
+    id: "search-name-input"
