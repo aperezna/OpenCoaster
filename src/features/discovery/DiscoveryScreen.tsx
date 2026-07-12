@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, TextInput, FlatList, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { LeafletMap } from './LeafletMap';
 import { DEFAULT_REGION } from '../../config/constants';
@@ -11,6 +12,7 @@ import type { LocationService, Coords } from '../../data/location/LocationServic
 import type { ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
 import type { ParkSummary } from '../../data/models/ParkSummary';
 import type { RootTabParamList } from '../../navigation/RootNavigator';
+import type { ThemeColors } from '../../theme/colors';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -56,6 +58,8 @@ export function DiscoveryScreen({
   locationService = defaultLocationService,
   onParkSelect,
 }: DiscoveryScreenProps): React.JSX.Element {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [searchQuery, setSearchQuery] = useState<ParkSearchQuery>({});
   const [showResults, setShowResults] = useState(false);
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
@@ -177,67 +181,69 @@ export function DiscoveryScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-  },
-  searchContainer: {
-    position: 'absolute',
-    top: 8,
-    left: 12,
-    right: 12,
-  },
-  searchInput: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    fontSize: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  resultsContainer: {
-    position: 'absolute',
-    top: 60,
-    left: 12,
-    right: 12,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    maxHeight: 250,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    paddingVertical: 4,
-  },
-  resultItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  resultName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-  resultSubtitle: {
-    fontSize: 13,
-    color: '#888',
-    marginTop: 2,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#999',
-    padding: 16,
-    textAlign: 'center',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    map: {
+      width: '100%',
+      height: '100%',
+    },
+    searchContainer: {
+      position: 'absolute',
+      top: 8,
+      left: 12,
+      right: 12,
+    },
+    searchInput: {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      fontSize: 16,
+      shadowColor: colors.cardShadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
+      elevation: 4,
+    },
+    resultsContainer: {
+      position: 'absolute',
+      top: 60,
+      left: 12,
+      right: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      maxHeight: 250,
+      shadowColor: colors.cardShadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      paddingVertical: 4,
+    },
+    resultItem: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    resultName: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+    },
+    resultSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    emptyText: {
+      fontSize: 14,
+      color: colors.textTertiary,
+      padding: 16,
+      textAlign: 'center',
+    },
+  });
+}

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
 import type { Attraction } from '../../data/models/Attraction';
+import type { ThemeColors } from '../../theme/colors';
 
 const typeLabels: Record<string, string> = {
   roller_coaster: 'Montaña rusa',
@@ -22,6 +24,9 @@ interface AttractionListProps {
 }
 
 export function AttractionList({ attractions }: AttractionListProps): React.JSX.Element {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (attractions.length === 0) {
     return (
       <View testID="attraction-list-empty" style={styles.emptyContainer}>
@@ -62,69 +67,71 @@ export function AttractionList({ attractions }: AttractionListProps): React.JSX.
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 16,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  emptyContainer: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  itemLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  attractionName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-  attractionType: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
-  },
-  itemRight: {
-    alignItems: 'flex-end',
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  waitTime: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#555',
-  },
-  waitTimeLong: {
-    color: '#F44336',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      marginTop: 16,
+      paddingHorizontal: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    emptyContainer: {
+      padding: 24,
+      alignItems: 'center',
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    item: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      marginBottom: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    itemLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    attractionName: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+    },
+    attractionType: {
+      fontSize: 12,
+      color: colors.textTertiary,
+      marginTop: 2,
+    },
+    itemRight: {
+      alignItems: 'flex-end',
+    },
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginBottom: 4,
+    },
+    waitTime: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    waitTimeLong: {
+      color: '#F44336',
+    },
+  });
+}

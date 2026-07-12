@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
 import type { ParkWeather } from '../../data/models/ParkWeather';
+import type { ThemeColors } from '../../theme/colors';
 
 const conditionLabels: Record<string, string> = {
   sunny: 'Soleado',
@@ -21,6 +23,8 @@ interface WeatherCardProps {
 }
 
 export function WeatherCard({ weather }: WeatherCardProps): React.JSX.Element {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const label = conditionLabels[weather.condition] ?? weather.condition;
   const emoji = conditionEmojis[weather.condition] ?? '';
 
@@ -38,40 +42,42 @@ export function WeatherCard({ weather }: WeatherCardProps): React.JSX.Element {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 8,
-  },
-  content: {
-    alignItems: 'center',
-  },
-  emoji: {
-    fontSize: 32,
-    marginBottom: 4,
-  },
-  temperature: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  condition: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    card: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginHorizontal: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    cardTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    content: {
+      alignItems: 'center',
+    },
+    emoji: {
+      fontSize: 32,
+      marginBottom: 4,
+    },
+    temperature: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: colors.text,
+    },
+    condition: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+  });
+}

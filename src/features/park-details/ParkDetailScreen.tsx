@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
+import { useTheme } from '../../theme/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import { useParkDetail } from './useParkDetail';
 import { useFavorites } from '../favorites/useFavorites';
@@ -29,6 +31,8 @@ import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigat
 const DEFAULT_PARK_ID = '75ea578a-adc8-4116-a54d-dccb60765ef9'; // Magic Kingdom Park
 
 export function ParkDetailScreen(): React.JSX.Element {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const route = useRoute<RouteProp<ParquesStackParamList, 'ParkDetail'>>();
   const parkId = route.params?.parkId ?? DEFAULT_PARK_ID;
   const provider = useParkDiscoveryProvider();
@@ -158,92 +162,94 @@ export function ParkDetailScreen(): React.JSX.Element {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  contentContainer: {
-    paddingBottom: 32,
-  },
-  container: {
-    flex: 1,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  photo: {
-    width: '100%',
-    height: 220,
-    resizeMode: 'cover',
-  },
-  photoPlaceholder: {
-    width: '100%',
-    height: 220,
-    backgroundColor: '#ddd',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    fontSize: 16,
-    color: '#999',
-  },
-  infoSection: {
-    padding: 16,
-    backgroundColor: '#fff',
-    marginBottom: 12,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  name: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-    flex: 1,
-  },
-  favoriteButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  favoriteIcon: {
-    fontSize: 28,
-  },
-  location: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
-  },
-  address: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 4,
-  },
-  phone: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 12,
-  },
-  directionsButton: {
-    backgroundColor: '#4A90D9',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-  },
-  directionsText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  cardsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    marginBottom: 8,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    scrollView: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    contentContainer: {
+      paddingBottom: 32,
+    },
+    container: {
+      flex: 1,
+      padding: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.background,
+    },
+    photo: {
+      width: '100%',
+      height: 220,
+      resizeMode: 'cover',
+    },
+    photoPlaceholder: {
+      width: '100%',
+      height: 220,
+      backgroundColor: colors.skeleton,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    placeholderText: {
+      fontSize: 16,
+      color: colors.textTertiary,
+    },
+    infoSection: {
+      padding: 16,
+      backgroundColor: colors.surface,
+      marginBottom: 12,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    name: {
+      fontSize: 26,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 4,
+      flex: 1,
+    },
+    favoriteButton: {
+      padding: 4,
+      marginLeft: 8,
+    },
+    favoriteIcon: {
+      fontSize: 28,
+    },
+    location: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    address: {
+      fontSize: 14,
+      color: colors.textTertiary,
+      marginBottom: 4,
+    },
+    phone: {
+      fontSize: 14,
+      color: colors.textTertiary,
+      marginBottom: 12,
+    },
+    directionsButton: {
+      backgroundColor: colors.accent,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+    },
+    directionsText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#fff',
+    },
+    cardsRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 12,
+      marginBottom: 8,
+    },
+  });
+}

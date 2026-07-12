@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
 import type { ParkSummary } from '../../data/models/ParkSummary';
+import type { ThemeColors } from '../../theme/colors';
 
 interface ParkResultListProps {
   parks: ParkSummary[];
@@ -15,6 +17,9 @@ export function ParkResultList({
   refreshing = false,
   onRefresh,
 }: ParkResultListProps): React.JSX.Element {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   if (parks.length === 0) {
     return (
       <View testID="park-result-list-empty" style={styles.emptyContainer}>
@@ -50,27 +55,29 @@ export function ParkResultList({
   );
 }
 
-const styles = StyleSheet.create({
-  emptyContainer: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  item: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  parkName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  parkMeta: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    emptyContainer: {
+      padding: 24,
+      alignItems: 'center',
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    item: {
+      padding: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    parkName: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    parkMeta: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+  });
+}

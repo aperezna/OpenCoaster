@@ -1,6 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Animated, View, StyleSheet } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
 import type { ViewStyle, StyleProp } from 'react-native';
+import type { ThemeColors } from '../theme/colors';
 
 // ---------------------------------------------------------------------------
 // SkeletonBlock — pulse-animated rectangle
@@ -22,6 +24,7 @@ function SkeletonBlock({
   style,
   testID,
 }: SkeletonBlockProps): React.JSX.Element {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
@@ -53,7 +56,7 @@ function SkeletonBlock({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           height: height as any,
           borderRadius,
-          backgroundColor: '#e0e0e0',
+          backgroundColor: colors.skeleton,
           opacity,
         },
         style,
@@ -67,42 +70,45 @@ function SkeletonBlock({
 // ---------------------------------------------------------------------------
 
 function ParkDetailSkeleton(): React.JSX.Element {
+  const { colors } = useTheme();
+  const s = useMemo(() => createMainStyles(colors), [colors]);
+
   return (
-    <View testID="park-detail-skeleton" style={styles.parkDetailContainer}>
+    <View testID="park-detail-skeleton" style={s.parkDetailContainer}>
       {/* Photo placeholder */}
       <SkeletonBlock width="100%" height={220} borderRadius={0} />
 
       {/* Info section */}
-      <View style={styles.infoSection}>
-        <SkeletonBlock width="60%" height={26} style={styles.infoName} />
-        <SkeletonBlock width="40%" height={16} style={styles.infoLine} />
-        <SkeletonBlock width="50%" height={14} style={styles.infoSmall} />
-        <SkeletonBlock width="30%" height={14} style={styles.infoSmall} />
+      <View style={s.infoSection}>
+        <SkeletonBlock width="60%" height={26} style={s.infoName} />
+        <SkeletonBlock width="40%" height={16} style={s.infoLine} />
+        <SkeletonBlock width="50%" height={14} style={s.infoSmall} />
+        <SkeletonBlock width="30%" height={14} style={s.infoSmall} />
         <SkeletonBlock width={120} height={44} borderRadius={8} />
       </View>
 
       {/* Weather + Hours card row */}
-      <View style={styles.cardsRow}>
-        <View style={styles.card}>
-          <SkeletonBlock width="40%" height={14} style={styles.cardTitle} />
-          <SkeletonBlock width="60%" height={32} style={styles.cardContentBlock} />
+      <View style={s.cardsRow}>
+        <View style={s.card}>
+          <SkeletonBlock width="40%" height={14} style={s.cardTitle} />
+          <SkeletonBlock width="60%" height={32} style={s.cardContentBlock} />
           <SkeletonBlock width="40%" height={14} />
         </View>
-        <View style={styles.card}>
-          <SkeletonBlock width="40%" height={14} style={styles.cardTitle} />
-          <SkeletonBlock width="50%" height={20} style={styles.cardContentBlock} />
-          <SkeletonBlock width="40%" height={14} style={styles.cardLabel} />
+        <View style={s.card}>
+          <SkeletonBlock width="40%" height={14} style={s.cardTitle} />
+          <SkeletonBlock width="50%" height={20} style={s.cardContentBlock} />
+          <SkeletonBlock width="40%" height={14} style={s.cardLabel} />
           <SkeletonBlock width="50%" height={20} />
         </View>
       </View>
 
       {/* Attractions section */}
-      <View style={styles.attractionsSection}>
-        <SkeletonBlock width="40%" height={18} style={styles.sectionTitle} />
+      <View style={s.attractionsSection}>
+        <SkeletonBlock width="40%" height={18} style={s.sectionTitle} />
         {[0, 1, 2].map((i) => (
-          <View key={i} style={styles.attractionItem}>
-            <View style={styles.attractionItemLeft}>
-              <SkeletonBlock width="50%" height={16} style={styles.attractionName} />
+          <View key={i} style={s.attractionItem}>
+            <View style={s.attractionItemLeft}>
+              <SkeletonBlock width="50%" height={16} style={s.attractionName} />
               <SkeletonBlock width="30%" height={12} />
             </View>
             <SkeletonBlock width={50} height={16} />
@@ -118,16 +124,19 @@ function ParkDetailSkeleton(): React.JSX.Element {
 // ---------------------------------------------------------------------------
 
 function ParksListSkeleton(): React.JSX.Element {
+  const { colors } = useTheme();
+  const s = useMemo(() => createMainStyles(colors), [colors]);
+
   return (
-    <View testID="parks-list-skeleton" style={styles.parksListContainer}>
+    <View testID="parks-list-skeleton" style={s.parksListContainer}>
       {/* Search input */}
-      <SkeletonBlock width="100%" height={44} borderRadius={8} style={styles.searchInput} />
+      <SkeletonBlock width="100%" height={44} borderRadius={8} style={s.searchInput} />
 
       {/* Park list items */}
       {[0, 1, 2, 3, 4].map((i) => (
-        <View key={i} style={styles.parkItem}>
-          <View style={styles.parkItemLeft}>
-            <SkeletonBlock width="60%" height={16} style={styles.parkItemName} />
+        <View key={i} style={s.parkItem}>
+          <View style={s.parkItemLeft}>
+            <SkeletonBlock width="60%" height={16} style={s.parkItemName} />
             <SkeletonBlock width="40%" height={12} />
           </View>
           <SkeletonBlock width={40} height={12} />
@@ -142,29 +151,26 @@ function ParksListSkeleton(): React.JSX.Element {
 // ---------------------------------------------------------------------------
 
 function ProfileSkeleton(): React.JSX.Element {
+  const { colors } = useTheme();
+  const s = useMemo(() => createMainStyles(colors), [colors]);
+
   return (
-    <View testID="profile-skeleton" style={styles.profileContainer}>
+    <View testID="profile-skeleton" style={s.profileContainer}>
       {/* Avatar */}
-      <SkeletonBlock width={80} height={80} borderRadius={40} style={styles.avatar} />
+      <SkeletonBlock width={80} height={80} borderRadius={40} style={s.avatar} />
 
       {/* Username & email */}
-      <SkeletonBlock width="40%" height={24} style={styles.username} />
-      <SkeletonBlock width="50%" height={16} style={styles.email} />
+      <SkeletonBlock width="40%" height={24} style={s.username} />
+      <SkeletonBlock width="50%" height={16} style={s.email} />
 
       {/* Info row */}
-      <SkeletonBlock width="100%" height={44} borderRadius={8} style={styles.infoRow} />
+      <SkeletonBlock width="100%" height={44} borderRadius={8} style={s.infoRow} />
 
       {/* Favorites section */}
-      <View style={styles.favoritesSection}>
-        <SkeletonBlock width="30%" height={18} style={styles.sectionTitle} />
+      <View style={s.favoritesSection}>
+        <SkeletonBlock width="30%" height={18} style={s.sectionTitle} />
         {[0, 1, 2].map((i) => (
-          <SkeletonBlock
-            key={i}
-            width="100%"
-            height={48}
-            borderRadius={8}
-            style={styles.favoriteItem}
-          />
+          <SkeletonBlock key={i} width="100%" height={48} borderRadius={8} style={s.favoriteItem} />
         ))}
       </View>
     </View>
@@ -175,155 +181,145 @@ function ProfileSkeleton(): React.JSX.Element {
 // Styles
 // ---------------------------------------------------------------------------
 
-const styles = StyleSheet.create({
-  // ParkDetailSkeleton
-  parkDetailContainer: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  infoSection: {
-    padding: 16,
-    backgroundColor: '#fff',
-    marginBottom: 12,
-  },
-  infoName: {
-    marginBottom: 8,
-  },
-  infoLine: {
-    marginBottom: 8,
-  },
-  infoSmall: {
-    marginBottom: 4,
-  },
-  cardsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    marginBottom: 8,
-  },
-  card: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 4,
-  },
-  cardTitle: {
-    marginBottom: 12,
-  },
-  cardContentBlock: {
-    marginBottom: 8,
-  },
-  cardLabel: {
-    marginBottom: 4,
-  },
-  attractionsSection: {
-    paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  sectionTitle: {
-    marginBottom: 12,
-  },
-  attractionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  attractionItemLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  attractionName: {
-    marginBottom: 4,
-  },
+function createMainStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    // ParkDetailSkeleton
+    parkDetailContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    infoSection: {
+      padding: 16,
+      backgroundColor: colors.surface,
+      marginBottom: 12,
+    },
+    infoName: {
+      marginBottom: 8,
+    },
+    infoLine: {
+      marginBottom: 8,
+    },
+    infoSmall: {
+      marginBottom: 4,
+    },
+    cardsRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 12,
+      marginBottom: 8,
+    },
+    card: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginHorizontal: 4,
+    },
+    cardTitle: {
+      marginBottom: 12,
+    },
+    cardContentBlock: {
+      marginBottom: 8,
+    },
+    cardLabel: {
+      marginBottom: 4,
+    },
+    attractionsSection: {
+      paddingHorizontal: 16,
+      marginTop: 16,
+    },
+    sectionTitle: {
+      marginBottom: 12,
+    },
+    attractionItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      marginBottom: 8,
+    },
+    attractionItemLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    attractionName: {
+      marginBottom: 4,
+    },
 
-  // ParksListSkeleton
-  parksListContainer: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  searchInput: {
-    margin: 12,
-  },
-  parkItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    marginHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  parkItemLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  parkItemName: {
-    marginBottom: 4,
-  },
+    // ParksListSkeleton
+    parksListContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    searchInput: {
+      margin: 12,
+    },
+    parkItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: colors.surface,
+      marginHorizontal: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+    },
+    parkItemLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    parkItemName: {
+      marginBottom: 4,
+    },
 
-  // ProfileSkeleton
-  profileContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    backgroundColor: '#f5f5f5',
-  },
-  avatar: {
-    marginBottom: 16,
-  },
-  username: {
-    marginBottom: 4,
-  },
-  email: {
-    marginBottom: 24,
-  },
-  infoRow: {
-    marginBottom: 16,
-  },
-  favoritesSection: {
-    width: '100%',
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  favoriteItem: {
-    marginBottom: 8,
-  },
-});
+    // ProfileSkeleton
+    profileContainer: {
+      flex: 1,
+      alignItems: 'center',
+      paddingTop: 60,
+      paddingHorizontal: 24,
+      backgroundColor: colors.background,
+    },
+    avatar: {
+      marginBottom: 16,
+    },
+    username: {
+      marginBottom: 4,
+    },
+    email: {
+      marginBottom: 24,
+    },
+    infoRow: {
+      marginBottom: 16,
+    },
+    favoritesSection: {
+      width: '100%',
+      marginTop: 24,
+      paddingHorizontal: 16,
+    },
+    favoriteItem: {
+      marginBottom: 8,
+    },
+  });
+}
 
 // ---------------------------------------------------------------------------
 // WeatherCardSkeleton — matches WeatherCard layout
 // ---------------------------------------------------------------------------
 
 function WeatherCardSkeleton(): React.JSX.Element {
+  const { colors } = useTheme();
+  const cs = useMemo(() => createCardSkeletonStyles(colors), [colors]);
+
   return (
-    <View style={cardSkeletonStyles.cardSkeleton} testID="weather-card-skeleton">
-      <SkeletonBlock
-        width={40}
-        height={14}
-        borderRadius={4}
-        style={cardSkeletonStyles.cardTitleSkeleton}
-      />
-      <View style={cardSkeletonStyles.cardContentCenter}>
-        <SkeletonBlock
-          width={36}
-          height={36}
-          borderRadius={18}
-          style={cardSkeletonStyles.cardEmojiSkeleton}
-        />
-        <SkeletonBlock
-          width={60}
-          height={28}
-          borderRadius={4}
-          style={cardSkeletonStyles.cardValueSkeleton}
-        />
+    <View style={cs.cardSkeleton} testID="weather-card-skeleton">
+      <SkeletonBlock width={40} height={14} borderRadius={4} style={cs.cardTitleSkeleton} />
+      <View style={cs.cardContentCenter}>
+        <SkeletonBlock width={36} height={36} borderRadius={18} style={cs.cardEmojiSkeleton} />
+        <SkeletonBlock width={60} height={28} borderRadius={4} style={cs.cardValueSkeleton} />
         <SkeletonBlock width={50} height={14} borderRadius={4} />
       </View>
     </View>
@@ -335,33 +331,16 @@ function WeatherCardSkeleton(): React.JSX.Element {
 // ---------------------------------------------------------------------------
 
 function HoursCardSkeleton(): React.JSX.Element {
+  const { colors } = useTheme();
+  const cs = useMemo(() => createCardSkeletonStyles(colors), [colors]);
+
   return (
-    <View style={cardSkeletonStyles.cardSkeleton} testID="hours-card-skeleton">
-      <SkeletonBlock
-        width={50}
-        height={14}
-        borderRadius={4}
-        style={cardSkeletonStyles.cardTitleSkeleton}
-      />
-      <View style={cardSkeletonStyles.cardContentCenter}>
-        <SkeletonBlock
-          width={40}
-          height={12}
-          borderRadius={4}
-          style={cardSkeletonStyles.cardLabelSkeleton}
-        />
-        <SkeletonBlock
-          width={70}
-          height={20}
-          borderRadius={4}
-          style={cardSkeletonStyles.cardValueSkeleton}
-        />
-        <SkeletonBlock
-          width={40}
-          height={12}
-          borderRadius={4}
-          style={cardSkeletonStyles.cardLabelSkeleton}
-        />
+    <View style={cs.cardSkeleton} testID="hours-card-skeleton">
+      <SkeletonBlock width={50} height={14} borderRadius={4} style={cs.cardTitleSkeleton} />
+      <View style={cs.cardContentCenter}>
+        <SkeletonBlock width={40} height={12} borderRadius={4} style={cs.cardLabelSkeleton} />
+        <SkeletonBlock width={70} height={20} borderRadius={4} style={cs.cardValueSkeleton} />
+        <SkeletonBlock width={40} height={12} borderRadius={4} style={cs.cardLabelSkeleton} />
         <SkeletonBlock width={70} height={20} borderRadius={4} />
       </View>
     </View>
@@ -373,23 +352,16 @@ function HoursCardSkeleton(): React.JSX.Element {
 // ---------------------------------------------------------------------------
 
 function AttractionListSkeleton(): React.JSX.Element {
+  const { colors } = useTheme();
+  const cs = useMemo(() => createCardSkeletonStyles(colors), [colors]);
+
   return (
-    <View style={cardSkeletonStyles.attractionListSkeleton} testID="attraction-list-skeleton">
-      <SkeletonBlock
-        width={120}
-        height={18}
-        borderRadius={4}
-        style={cardSkeletonStyles.sectionTitleSkeleton}
-      />
+    <View style={cs.attractionListSkeleton} testID="attraction-list-skeleton">
+      <SkeletonBlock width={120} height={18} borderRadius={4} style={cs.sectionTitleSkeleton} />
       {[0, 1, 2].map((i) => (
-        <View key={i} style={cardSkeletonStyles.attractionItemSkeleton}>
-          <View style={cardSkeletonStyles.attractionItemLeft}>
-            <SkeletonBlock
-              width="60%"
-              height={16}
-              borderRadius={4}
-              style={cardSkeletonStyles.attrNameSkeleton}
-            />
+        <View key={i} style={cs.attractionItemSkeleton}>
+          <View style={cs.attractionItemLeft}>
+            <SkeletonBlock width="60%" height={16} borderRadius={4} style={cs.attrNameSkeleton} />
             <SkeletonBlock width="30%" height={12} borderRadius={4} />
           </View>
           <SkeletonBlock width={50} height={16} borderRadius={4} />
@@ -403,54 +375,56 @@ function AttractionListSkeleton(): React.JSX.Element {
 // Style additions for card skeletons
 // ---------------------------------------------------------------------------
 
-const cardSkeletonStyles = StyleSheet.create({
-  cardSkeleton: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 4,
-  },
-  cardContentCenter: {
-    alignItems: 'center',
-  },
-  cardTitleSkeleton: {
-    marginBottom: 12,
-  },
-  cardEmojiSkeleton: {
-    marginBottom: 8,
-  },
-  cardValueSkeleton: {
-    marginBottom: 4,
-  },
-  cardLabelSkeleton: {
-    marginBottom: 4,
-  },
-  attractionListSkeleton: {
-    marginTop: 16,
-    paddingHorizontal: 16,
-  },
-  sectionTitleSkeleton: {
-    marginBottom: 12,
-  },
-  attractionItemSkeleton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  attractionItemLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  attrNameSkeleton: {
-    marginBottom: 4,
-  },
-});
+function createCardSkeletonStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    cardSkeleton: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginHorizontal: 4,
+    },
+    cardContentCenter: {
+      alignItems: 'center',
+    },
+    cardTitleSkeleton: {
+      marginBottom: 12,
+    },
+    cardEmojiSkeleton: {
+      marginBottom: 8,
+    },
+    cardValueSkeleton: {
+      marginBottom: 4,
+    },
+    cardLabelSkeleton: {
+      marginBottom: 4,
+    },
+    attractionListSkeleton: {
+      marginTop: 16,
+      paddingHorizontal: 16,
+    },
+    sectionTitleSkeleton: {
+      marginBottom: 12,
+    },
+    attractionItemSkeleton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      marginBottom: 8,
+    },
+    attractionItemLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    attrNameSkeleton: {
+      marginBottom: 4,
+    },
+  });
+}
 
 export {
   SkeletonBlock,

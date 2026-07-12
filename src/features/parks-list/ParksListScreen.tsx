@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSearchParks } from '../discovery/useSearchParks';
@@ -8,8 +9,11 @@ import { ParkResultList } from '../discovery/ParkResultList';
 import { ParksListSkeleton } from '../../components/Skeleton';
 import ErrorState from '../../components/ErrorState';
 import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigator';
+import type { ThemeColors } from '../../theme/colors';
 
 export function ParksListScreen(): React.JSX.Element {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<NativeStackNavigationProp<ParquesStackParamList>>();
   const provider = useParkDiscoveryProvider();
 
@@ -94,19 +98,21 @@ export function ParksListScreen(): React.JSX.Element {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  searchInput: {
-    margin: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    searchInput: {
+      margin: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      fontSize: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+  });
+}
