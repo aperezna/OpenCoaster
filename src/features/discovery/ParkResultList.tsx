@@ -1,13 +1,20 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
 import type { ParkSummary } from '../../data/models/ParkSummary';
 
 interface ParkResultListProps {
   parks: ParkSummary[];
   onParkPress: (parkId: string) => void;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
-export function ParkResultList({ parks, onParkPress }: ParkResultListProps): React.JSX.Element {
+export function ParkResultList({
+  parks,
+  onParkPress,
+  refreshing = false,
+  onRefresh,
+}: ParkResultListProps): React.JSX.Element {
   if (parks.length === 0) {
     return (
       <View testID="park-result-list-empty" style={styles.emptyContainer}>
@@ -36,6 +43,9 @@ export function ParkResultList({ parks, onParkPress }: ParkResultListProps): Rea
           ) : null}
         </TouchableOpacity>
       )}
+      refreshControl={
+        onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
+      }
     />
   );
 }

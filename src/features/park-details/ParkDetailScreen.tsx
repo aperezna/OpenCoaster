@@ -1,5 +1,14 @@
-import React from 'react';
-import { View, Text, Image, ScrollView, TouchableOpacity, Linking, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  Linking,
+  StyleSheet,
+} from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import { useParkDetail } from './useParkDetail';
@@ -8,6 +17,7 @@ import { WeatherCard } from './WeatherCard';
 import { HoursCard } from './HoursCard';
 import { AttractionList } from './AttractionList';
 import { ParkDetailSkeleton } from '../../components/Skeleton';
+import ErrorState from '../../components/ErrorState';
 import type { RouteProp } from '@react-navigation/native';
 import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigator';
 
@@ -26,20 +36,29 @@ export function ParkDetailScreen(): React.JSX.Element {
     attractions,
     isLoading: _isLoading,
     isParkLoading,
+    isFetching,
     error,
+    refetchAll,
   } = useParkDetail(parkId, provider);
 
-  const handleDirections = () => {
+  const handleDirections = useCallback(() => {
     if (park) {
       const url = `https://www.google.com/maps/dir/?api=1&destination=${park.latitude},${park.longitude}`;
       Linking.openURL(url);
     }
-  };
+  }, [park]);
 
-  if (error) {
+  const handleRefresh = useCallback(() => {
+    refetchAll();
+  }, [refetchAll]);
+
+  if (error && !park) {
     return (
       <View testID="park-detail-screen" style={styles.container}>
-        <Text>{error.message}</Text>
+        <ErrorState
+          message="No se pudo cargar la información del parque."
+          onRetry={handleRefresh}
+        />
       </View>
     );
   }
@@ -55,7 +74,7 @@ export function ParkDetailScreen(): React.JSX.Element {
   if (!park) {
     return (
       <View testID="park-detail-screen" style={styles.container}>
-        <Text>Park not found</Text>
+        <ErrorState message="Parque no encontrado." />
       </View>
     );
   }
@@ -65,6 +84,7 @@ export function ParkDetailScreen(): React.JSX.Element {
       testID="park-detail-screen"
       style={styles.scrollView}
       contentContainerStyle={styles.contentContainer}
+      refreshControl={<RefreshControl refreshing={isFetching} onRefresh={handleRefresh} />}
     >
       {/* Photo header */}
       {park.photoUrl ? (

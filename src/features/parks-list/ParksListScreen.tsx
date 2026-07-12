@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -6,6 +6,7 @@ import { useSearchParks } from '../discovery/useSearchParks';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import { ParkResultList } from '../discovery/ParkResultList';
 import { ParksListSkeleton } from '../../components/Skeleton';
+import ErrorState from '../../components/ErrorState';
 import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigator';
 
 export function ParksListScreen(): React.JSX.Element {
@@ -26,7 +27,7 @@ export function ParksListScreen(): React.JSX.Element {
     return () => clearTimeout(timer);
   }, [searchText]);
 
-  const { parks, isLoading } = useSearchParks(
+  const { parks, isLoading, isFetching, error, refetch } = useSearchParks(
     debouncedText ? { name: debouncedText } : {},
     provider,
   );
@@ -37,14 +38,39 @@ export function ParksListScreen(): React.JSX.Element {
     }
   }, [parks, hasLoadedOnce]);
 
-  const handleParkPress = (parkId: string) => {
-    navigation.navigate('ParkDetail', { parkId });
-  };
+  const handleParkPress = useCallback(
+    (parkId: string) => {
+      navigation.navigate('ParkDetail', { parkId });
+    },
+    [navigation],
+  );
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   if (isLoading && !hasLoadedOnce) {
     return (
       <View style={styles.container} testID="parks-list-screen">
         <ParksListSkeleton />
+      </View>
+    );
+  }
+
+  if (error && !parks) {
+    return (
+      <View style={styles.container} testID="parks-list-screen">
+        <TextInput
+          testID="park-search-input"
+          style={styles.searchInput}
+          placeholder="Buscar parques..."
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+        <ErrorState
+          message="No se pudieron cargar los parques. Revisá tu conexión."
+          onRetry={handleRefresh}
+        />
       </View>
     );
   }
@@ -58,7 +84,12 @@ export function ParksListScreen(): React.JSX.Element {
         value={searchText}
         onChangeText={setSearchText}
       />
-      <ParkResultList parks={parks ?? []} onParkPress={handleParkPress} />
+      <ParkResultList
+        parks={parks ?? []}
+        onParkPress={handleParkPress}
+        refreshing={isFetching}
+        onRefresh={handleRefresh}
+      />
     </View>
   );
 }

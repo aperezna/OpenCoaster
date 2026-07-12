@@ -12,12 +12,22 @@ export function useSearchParks(
 ): {
   parks: ParkSummary[] | undefined;
   isLoading: boolean;
+  isFetching: boolean;
   error: Error | null;
+  refetch: () => void;
 } {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: [...OPENCOASTER_KEY_PREFIX, 'searchParks', query],
     queryFn: () => provider.searchParks(query),
   });
 
-  return { parks: data, isLoading, error: error ?? null };
+  return {
+    parks: data,
+    isLoading,
+    isFetching,
+    error: error ?? null,
+    refetch: () => {
+      refetch();
+    },
+  };
 }

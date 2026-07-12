@@ -78,7 +78,7 @@ describe('ParkDetailScreen', () => {
     });
   });
 
-  it('should show "Park not found" for unknown parkId', async () => {
+  it('should show "Parque no encontrado" for unknown parkId', async () => {
     mockUseRoute.mockReturnValue({
       key: 'Parques',
       name: 'Parques',
@@ -86,7 +86,7 @@ describe('ParkDetailScreen', () => {
     });
     renderWithProviders();
     await waitFor(() => {
-      expect(screen.getByText('Park not found')).toBeTruthy();
+      expect(screen.getByText('Parque no encontrado.')).toBeTruthy();
     });
   });
 
@@ -134,11 +134,11 @@ describe('ParkDetailScreen', () => {
       params: {},
     });
     // When no parkId is in route params, it falls back to DEFAULT_PARK_ID
-    // (the real default is a GUID, which fixtures don't know, so it shows "Park not found")
+    // (the real default is a GUID, which fixtures don't know, so it shows error state)
     // This test verifies the fallback chain works without crashing
     renderWithProviders();
     await waitFor(() => {
-      expect(screen.getByText('Park not found')).toBeTruthy();
+      expect(screen.getByText('Parque no encontrado.')).toBeTruthy();
     });
   });
 });
