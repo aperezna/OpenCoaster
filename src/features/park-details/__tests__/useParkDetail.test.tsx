@@ -24,8 +24,18 @@ function createTestQueryClient() {
 function TestComponent({ parkId, provider }: { parkId: string; provider: ParkDiscoveryProvider }) {
   const { park, weather, hours, attractions, isLoading, error } = useParkDetail(parkId, provider);
 
-  if (isLoading) return <View testID="loading-view"><Text>Loading...</Text></View>;
-  if (error) return <View testID="error-view"><Text>Error: {error.message}</Text></View>;
+  if (isLoading)
+    return (
+      <View testID="loading-view">
+        <Text>Loading...</Text>
+      </View>
+    );
+  if (error)
+    return (
+      <View testID="error-view">
+        <Text>Error: {error.message}</Text>
+      </View>
+    );
 
   return (
     <View testID="loaded-view">

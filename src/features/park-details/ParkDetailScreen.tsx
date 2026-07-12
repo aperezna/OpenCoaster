@@ -1,33 +1,33 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, Linking, StyleSheet } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import { useParkDetail } from './useParkDetail';
+import { useFavorites } from '../favorites/useFavorites';
 import { WeatherCard } from './WeatherCard';
 import { HoursCard } from './HoursCard';
 import { AttractionList } from './AttractionList';
+import { ParkDetailSkeleton } from '../../components/Skeleton';
 import type { RouteProp } from '@react-navigation/native';
-import type { RootTabParamList } from '../../navigation/RootNavigator';
+import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigator';
 
 const DEFAULT_PARK_ID = '75ea578a-adc8-4116-a54d-dccb60765ef9'; // Magic Kingdom Park
 
 export function ParkDetailScreen(): React.JSX.Element {
-  const route = useRoute<RouteProp<RootTabParamList, 'Parques'>>();
+  const route = useRoute<RouteProp<ParquesStackParamList, 'ParkDetail'>>();
   const parkId = route.params?.parkId ?? DEFAULT_PARK_ID;
   const provider = useParkDiscoveryProvider();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
-  const { park, weather, hours, attractions, isLoading, isParkLoading, error } = useParkDetail(
-    parkId,
-    provider,
-  );
+  const {
+    park,
+    weather,
+    hours,
+    attractions,
+    isLoading: _isLoading,
+    isParkLoading,
+    error,
+  } = useParkDetail(parkId, provider);
 
   const handleDirections = () => {
     if (park) {
@@ -47,7 +47,7 @@ export function ParkDetailScreen(): React.JSX.Element {
   if (isParkLoading) {
     return (
       <View testID="park-detail-screen" style={styles.container}>
-        <Text>Loading...</Text>
+        <ParkDetailSkeleton />
       </View>
     );
   }
@@ -68,11 +68,7 @@ export function ParkDetailScreen(): React.JSX.Element {
     >
       {/* Photo header */}
       {park.photoUrl ? (
-        <Image
-          testID="park-photo"
-          source={{ uri: park.photoUrl }}
-          style={styles.photo}
-        />
+        <Image testID="park-photo" source={{ uri: park.photoUrl }} style={styles.photo} />
       ) : (
         <View testID="park-photo-placeholder" style={styles.photoPlaceholder}>
           <Text style={styles.placeholderText}>No photo available</Text>
@@ -81,18 +77,28 @@ export function ParkDetailScreen(): React.JSX.Element {
 
       {/* Park info */}
       <View style={styles.infoSection}>
-        <Text style={styles.name}>{park.name}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.name}>{park.name}</Text>
+          <TouchableOpacity
+            testID="favorite-toggle"
+            onPress={() => toggleFavorite(parkId, park.name)}
+            style={styles.favoriteButton}
+          >
+            <Text
+              testID={isFavorite(parkId) ? 'favorite-toggle-filled' : 'favorite-toggle-outline'}
+              style={styles.favoriteIcon}
+            >
+              {isFavorite(parkId) ? '⭐' : '☆'}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.location}>
           {park.city}, {park.country}
         </Text>
 
-        {park.address ? (
-          <Text style={styles.address}>{park.address}</Text>
-        ) : null}
+        {park.address ? <Text style={styles.address}>{park.address}</Text> : null}
 
-        {park.phone ? (
-          <Text style={styles.phone}>{park.phone}</Text>
-        ) : null}
+        {park.phone ? <Text style={styles.phone}>{park.phone}</Text> : null}
 
         {/* Directions button */}
         <TouchableOpacity
@@ -152,11 +158,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginBottom: 12,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   name: {
     fontSize: 26,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
+    flex: 1,
+  },
+  favoriteButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  favoriteIcon: {
+    fontSize: 28,
   },
   location: {
     fontSize: 16,

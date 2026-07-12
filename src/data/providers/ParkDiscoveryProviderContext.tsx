@@ -21,11 +21,7 @@ export function ParkDiscoveryContextProvider({
   children,
   provider = new ThemeParksWikiProvider(),
 }: ParkDiscoveryContextProviderProps): React.JSX.Element {
-  return (
-    <ParkDiscoveryContext.Provider value={provider}>
-      {children}
-    </ParkDiscoveryContext.Provider>
-  );
+  return <ParkDiscoveryContext.Provider value={provider}>{children}</ParkDiscoveryContext.Provider>;
 }
 
 // ---------------------------------------------------------------------------
@@ -35,9 +31,7 @@ export function ParkDiscoveryContextProvider({
 export function useParkDiscoveryProvider(): ParkDiscoveryProvider {
   const provider = useContext(ParkDiscoveryContext);
   if (!provider) {
-    throw new Error(
-      'useParkDiscoveryProvider must be used within a ParkDiscoveryContextProvider',
-    );
+    throw new Error('useParkDiscoveryProvider must be used within a ParkDiscoveryContextProvider');
   }
   return provider;
 }

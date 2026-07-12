@@ -26,7 +26,8 @@ function renderScreen(options: RenderOptions = {}) {
       <ParkDiscoveryContextProvider provider={fixture}>
         <DiscoveryScreen
           locationService={
-            options.locationService ?? new FakeLocationService('granted', { latitude: 28.4, longitude: -81.6 })
+            options.locationService ??
+            new FakeLocationService('granted', { latitude: 28.4, longitude: -81.6 })
           }
           onParkSelect={options.onParkSelect}
         />

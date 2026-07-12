@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { OPENCOASTER_KEY_PREFIX } from '../../data/cache/queryClient';
 import type { ParkSummary } from '../../data/models/ParkSummary';
-import type { ParkDiscoveryProvider, ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
+import type {
+  ParkDiscoveryProvider,
+  ParkSearchQuery,
+} from '../../data/providers/ParkDiscoveryProvider';
 
 export function useSearchParks(
   query: ParkSearchQuery,

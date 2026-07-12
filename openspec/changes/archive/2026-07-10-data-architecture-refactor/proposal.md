@@ -7,6 +7,7 @@ Two connected improvements: (1) unify all park data fetching under React Query f
 ## Scope
 
 ### In Scope
+
 - React Query hooks for `getParkById`, `getParkWeather`, `getParkHours`, `getParkAttractions`
 - `ParkDiscoveryProviderContext` (React Context + provider component + consumer hook)
 - Wire provider context into `App.tsx` (alongside existing `QueryClientProvider`)
@@ -16,6 +17,7 @@ Two connected improvements: (1) unify all park data fetching under React Query f
 - `FixtureParkDiscoveryProvider` already exists — ensure test-wrappable via context
 
 ### Out of Scope
+
 - New data operations or API endpoints
 - Runtime provider switching / multi-provider support
 - Cache persistence tuning or offline indicators
@@ -24,9 +26,11 @@ Two connected improvements: (1) unify all park data fetching under React Query f
 ## Capabilities
 
 ### New Capabilities
+
 None — pure refactor, no spec-level behavior changes.
 
 ### Modified Capabilities
+
 None — existing specs cover the same behavior.
 
 ## Approach
@@ -37,21 +41,21 @@ None — existing specs cover the same behavior.
 
 ## Affected Areas
 
-| Area | Impact | Description |
-|------|--------|-------------|
-| `src/features/park-details/` | Modified + New | `ParkDetailScreen.tsx` refactored; new hooks (`usePark*`) |
-| `src/features/discovery/DiscoveryScreen.tsx` | Modified | Remove direct `ThemeParksWikiProvider` instantiation |
-| `src/features/profile/ProfileScreen.tsx` | Modified | Remove direct `ThemeParksWikiProvider` instantiation |
-| `src/data/providers/` | New | `ParkDiscoveryProviderContext.tsx` |
-| `App.tsx` | Modified | Add `ParkDiscoveryContextProvider` wrapper |
-| `src/navigation/RootNavigator.tsx` | Unchanged | Screens now get provider from context internally |
+| Area                                         | Impact         | Description                                               |
+| -------------------------------------------- | -------------- | --------------------------------------------------------- |
+| `src/features/park-details/`                 | Modified + New | `ParkDetailScreen.tsx` refactored; new hooks (`usePark*`) |
+| `src/features/discovery/DiscoveryScreen.tsx` | Modified       | Remove direct `ThemeParksWikiProvider` instantiation      |
+| `src/features/profile/ProfileScreen.tsx`     | Modified       | Remove direct `ThemeParksWikiProvider` instantiation      |
+| `src/data/providers/`                        | New            | `ParkDiscoveryProviderContext.tsx`                        |
+| `App.tsx`                                    | Modified       | Add `ParkDiscoveryContextProvider` wrapper                |
+| `src/navigation/RootNavigator.tsx`           | Unchanged      | Screens now get provider from context internally          |
 
 ## Risks
 
-| Risk | Likelihood | Mitigation |
-|------|------------|------------|
-| Existing tests mock provider via prop — context change breaks them | Low | Keep optional prop override in hooks; test both paths |
-| `useParkDetail` fetches 4 queries independently — waterfall | Med | Use `useQueries` for parallel fetch, same behavior as current `Promise.all` |
+| Risk                                                               | Likelihood | Mitigation                                                                  |
+| ------------------------------------------------------------------ | ---------- | --------------------------------------------------------------------------- |
+| Existing tests mock provider via prop — context change breaks them | Low        | Keep optional prop override in hooks; test both paths                       |
+| `useParkDetail` fetches 4 queries independently — waterfall        | Med        | Use `useQueries` for parallel fetch, same behavior as current `Promise.all` |
 
 ## Rollback Plan
 

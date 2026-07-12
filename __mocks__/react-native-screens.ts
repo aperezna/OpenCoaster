@@ -24,7 +24,8 @@ export const ScreenStack: React.FC<any> = ({ children, ...props }) => {
 export const ScreenStackHeaderConfig: React.FC<any> = () => null;
 export const ScreenStackHeaderSubview: React.FC<any> = () => null;
 export const SearchBar: React.FC<any> = () => null;
-export const FullWindowOverlay: React.FC<any> = ({ children }) => React.createElement(React.Fragment, null, children);
+export const FullWindowOverlay: React.FC<any> = ({ children }) =>
+  React.createElement(React.Fragment, null, children);
 
 export default {
   Screen,

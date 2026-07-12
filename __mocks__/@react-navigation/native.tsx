@@ -3,9 +3,7 @@ import { View } from 'react-native';
 
 // Mock for @react-navigation/native
 
-export const NavigationContainer: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const NavigationContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return React.createElement(View, { testID: 'navigation-container' }, children);
 };
 

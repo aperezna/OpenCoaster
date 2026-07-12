@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigatorScreenParams } from '@react-navigation/native';
 import { DiscoveryScreen } from '../features/discovery/DiscoveryScreen';
-import { ParkDetailScreen } from '../features/park-details/ParkDetailScreen';
+import { ParquesStackNavigator } from './ParquesStackNavigator';
+import type { ParquesStackParamList } from './ParquesStackNavigator';
 import { ProfileScreen } from '../features/profile/ProfileScreen';
 
 export type RootTabParamList = {
   Mapa: undefined;
-  Parques: { parkId?: string } | undefined;
+  Parques: NavigatorScreenParams<ParquesStackParamList> | undefined;
   Usuario: undefined;
 };
 
@@ -39,18 +41,9 @@ export function RootNavigator({
       initialRouteName={initialRouteName as keyof RootTabParamList}
       screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen
-        name="Mapa"
-        children={() => <DiscoveryScreen />}
-      />
-      <Tab.Screen
-        name="Parques"
-        children={() => <ParkDetailScreen />}
-      />
-      <Tab.Screen
-        name="Usuario"
-        component={ProfileScreen}
-      />
+      <Tab.Screen name="Mapa" children={() => <DiscoveryScreen />} />
+      <Tab.Screen name="Parques" children={() => <ParquesStackNavigator />} />
+      <Tab.Screen name="Usuario" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }

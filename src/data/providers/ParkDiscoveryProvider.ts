@@ -42,12 +42,7 @@ const EARTH_RADIUS_KM = 6371;
  * Compute the great-circle distance in km between two coordinates using the
  * Haversine formula.
  */
-function haversineKm(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (deg: number): number => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
@@ -73,8 +68,7 @@ export class FixtureParkDiscoveryProvider implements ParkDiscoveryProvider {
     if (proximity) {
       const { latitude, longitude, radiusKm } = proximity;
       results = results.filter(
-        (p) =>
-          haversineKm(latitude, longitude, p.latitude, p.longitude) <= radiusKm,
+        (p) => haversineKm(latitude, longitude, p.latitude, p.longitude) <= radiusKm,
       );
     }
 

@@ -21,8 +21,18 @@ function TestComponent({ query }: { query: ParkSearchQuery }) {
   const provider = React.useMemo(() => new FixtureParkDiscoveryProvider(), []);
   const { parks, isLoading, error } = useSearchParks(query, provider);
 
-  if (isLoading) return <View testID="loading-view"><Text>Loading...</Text></View>;
-  if (error) return <View testID="error-view"><Text>Error: {error.message}</Text></View>;
+  if (isLoading)
+    return (
+      <View testID="loading-view">
+        <Text>Loading...</Text>
+      </View>
+    );
+  if (error)
+    return (
+      <View testID="error-view">
+        <Text>Error: {error.message}</Text>
+      </View>
+    );
   return (
     <View testID="results-view">
       {(parks ?? []).map((p) => (

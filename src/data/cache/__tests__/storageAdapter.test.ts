@@ -3,7 +3,7 @@ import type { StorageAdapter } from '../storageAdapter';
 describe('StorageAdapter interface', () => {
   it('should allow creating a valid StorageAdapter implementation', () => {
     const adapter: StorageAdapter = {
-      getItem: async (key: string) => key === 'test' ? 'value' : null,
+      getItem: async (key: string) => (key === 'test' ? 'value' : null),
       setItem: async (_key: string, _value: string) => {},
       removeItem: async (_key: string) => {},
     };
@@ -16,7 +16,7 @@ describe('StorageAdapter interface', () => {
 
   it('should return string or null from getItem', async () => {
     const adapter: StorageAdapter = {
-      getItem: async (key: string) => key === 'found' ? 'data' : null,
+      getItem: async (key: string) => (key === 'found' ? 'data' : null),
       setItem: async () => {},
       removeItem: async () => {},
     };

@@ -11,9 +11,7 @@ function createTestQueryClient() {
   });
 }
 
-async function renderNavigator(
-  initialRouteName?: keyof RootTabParamList,
-) {
+async function renderNavigator(initialRouteName?: keyof RootTabParamList) {
   const queryClient = createTestQueryClient();
   const fixture = new FixtureParkDiscoveryProvider();
   return render(
@@ -31,9 +29,9 @@ describe('RootNavigator', () => {
     expect(screen.getByTestId('discovery-screen')).toBeOnTheScreen();
   });
 
-  it('should mount ParkDetailScreen when Parques tab is selected', async () => {
+  it('should mount the ParquesStackNavigator (parks list) when Parques tab is selected', async () => {
     await renderNavigator('Parques');
-    expect(screen.getByTestId('park-detail-screen')).toBeOnTheScreen();
+    expect(screen.getByTestId('parks-list-screen')).toBeOnTheScreen();
   });
 
   it('should render fallback view for unknown route', async () => {

@@ -6,14 +6,14 @@ Greenfield Expo + React Native + TypeScript bootstrap with discovery-first archi
 
 ## Architecture Decisions
 
-| Option | Tradeoff | Decision |
-|--------|----------|----------|
-| Single DiscoveryScreen vs. separate screens | Separate adds nav complexity; single works for MVP scope | **Single DiscoveryScreen** — map + search collocated |
-| Geolocation as hook vs. service interface | Hook is tight to RN; interface enables pure TS test doubles for Windows | **LocationService interface** — `getCurrentPosition()`, `requestPermission()` |
-| Flat provider interface vs. discriminated by source | Flat is simpler; discriminated needed later for multi-provider | **Flat `searchParks(query)`** — keeps first slice simple |
-| `@react-navigation/native-stack` vs. expo-router | expo-router adds file-convention overhead; native-stack is explicit | **Native stack navigator** — explicit route config, no file convention |
-| persistQueryClient now vs. deferred | Needs AsyncStorage dep; fixture data doesn't need persistence yet | **StorageAdapter types declared, wiring deferred** |
-| OSM tile rendering (no API key) vs. Google Maps | OSM needs tile URL but no key; Google requires billing | **react-native-maps OSM via `urlTileTemplate`** — no API key |
+| Option                                              | Tradeoff                                                                | Decision                                                                      |
+| --------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Single DiscoveryScreen vs. separate screens         | Separate adds nav complexity; single works for MVP scope                | **Single DiscoveryScreen** — map + search collocated                          |
+| Geolocation as hook vs. service interface           | Hook is tight to RN; interface enables pure TS test doubles for Windows | **LocationService interface** — `getCurrentPosition()`, `requestPermission()` |
+| Flat provider interface vs. discriminated by source | Flat is simpler; discriminated needed later for multi-provider          | **Flat `searchParks(query)`** — keeps first slice simple                      |
+| `@react-navigation/native-stack` vs. expo-router    | expo-router adds file-convention overhead; native-stack is explicit     | **Native stack navigator** — explicit route config, no file convention        |
+| persistQueryClient now vs. deferred                 | Needs AsyncStorage dep; fixture data doesn't need persistence yet       | **StorageAdapter types declared, wiring deferred**                            |
+| OSM tile rendering (no API key) vs. Google Maps     | OSM needs tile URL but no key; Google requires billing                  | **react-native-maps OSM via `urlTileTemplate`** — no API key                  |
 
 ## Data Flow
 
@@ -45,11 +45,11 @@ Screen/hook → ParkDiscoveryProvider (interface)
 
 ## Navigation / Routes
 
-| Route | Component | Params | Notes |
-|-------|-----------|--------|-------|
-| `Discovery` | DiscoveryScreen | none | Initial route. Map + search. |
-| `ParkDetail` | ParkDetailScreen | `{ parkId: string }` | Placeholder. Reads park from provider. |
-| `*` (unknown) | FallbackView | — | Shows "Screen not found" — no crash. |
+| Route         | Component        | Params               | Notes                                  |
+| ------------- | ---------------- | -------------------- | -------------------------------------- |
+| `Discovery`   | DiscoveryScreen  | none                 | Initial route. Map + search.           |
+| `ParkDetail`  | ParkDetailScreen | `{ parkId: string }` | Placeholder. Reads park from provider. |
+| `*` (unknown) | FallbackView     | —                    | Shows "Screen not found" — no crash.   |
 
 ## File / Folder Structure
 
@@ -144,10 +144,10 @@ export interface StorageAdapter {
 
 `LocationService` interface decouples consumers from `expo-location`:
 
-| Implementation | Context | Behavior |
-|---------------|---------|----------|
-| `ExpoLocationService` | Production | Wraps `expo-location` native calls |
-| `FakeLocationService` | Tests | Returns controlled Coords; simulates denial/error |
+| Implementation        | Context    | Behavior                                          |
+| --------------------- | ---------- | ------------------------------------------------- |
+| `ExpoLocationService` | Production | Wraps `expo-location` native calls                |
+| `FakeLocationService` | Tests      | Returns controlled Coords; simulates denial/error |
 
 The `DiscoveryScreen` receives `LocationService` as a dependency (props or context). Tests inject `FakeLocationService` without any native module dependency. This is critical because Windows shell cannot run `expo-location`.
 
@@ -166,13 +166,13 @@ No Google Maps API key required. Attribution handled per OSM tile usage policy.
 
 ## Testing Strategy
 
-| Layer | What | Approach |
-|-------|------|----------|
-| Unit | `FixtureParkDiscoveryProvider.searchParks()` | Pure TS — test name match, name+city match, empty, no-match |
-| Unit | `FakeLocationService` | All 3 permission outcomes + position return |
-| Unit | `useSearchParks` (hook) | `@testing-library/react-hooks` with QueryClient wrapper |
-| Unit | Cache config | Verify staleTime, retry, key namespace |
-| Integration | `DiscoveryScreen` | render with mock provider + mock location service |
+| Layer       | What                                         | Approach                                                    |
+| ----------- | -------------------------------------------- | ----------------------------------------------------------- |
+| Unit        | `FixtureParkDiscoveryProvider.searchParks()` | Pure TS — test name match, name+city match, empty, no-match |
+| Unit        | `FakeLocationService`                        | All 3 permission outcomes + position return                 |
+| Unit        | `useSearchParks` (hook)                      | `@testing-library/react-hooks` with QueryClient wrapper     |
+| Unit        | Cache config                                 | Verify staleTime, retry, key namespace                      |
+| Integration | `DiscoveryScreen`                            | render with mock provider + mock location service           |
 
 ## Migration / Rollout
 

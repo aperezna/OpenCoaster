@@ -41,28 +41,18 @@ export function AttractionList({ attractions }: AttractionListProps): React.JSX.
           <View testID={`attraction-${item.id}`} style={styles.item}>
             <View style={styles.itemLeft}>
               <Text style={styles.attractionName}>{item.name}</Text>
-              <Text style={styles.attractionType}>
-                {typeLabels[item.type] ?? item.type}
-              </Text>
+              <Text style={styles.attractionType}>{typeLabels[item.type] ?? item.type}</Text>
             </View>
             <View style={styles.itemRight}>
               <View
-                style={[
-                  styles.statusDot,
-                  { backgroundColor: statusColors[item.status] ?? '#999' },
-                ]}
+                style={[styles.statusDot, { backgroundColor: statusColors[item.status] ?? '#999' }]}
               />
-              <Text
-                style={[
-                  styles.waitTime,
-                  item.waitTime > 30 && styles.waitTimeLong,
-                ]}
-              >
+              <Text style={[styles.waitTime, item.waitTime > 30 && styles.waitTimeLong]}>
                 {item.status === 'operating'
                   ? `${item.waitTime} min`
                   : item.status === 'closed'
-                  ? 'Cerrado'
-                  : 'Fuera de servicio'}
+                    ? 'Cerrado'
+                    : 'Fuera de servicio'}
               </Text>
             </View>
           </View>

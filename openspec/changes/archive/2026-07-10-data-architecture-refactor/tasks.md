@@ -2,14 +2,14 @@
 
 ## Review Workload Forecast
 
-| Field | Value |
-|-------|-------|
-| Estimated changed lines | ~150-200 |
-| 400-line budget risk | Low |
-| Chained PRs recommended | No |
-| Suggested split | Single PR |
-| Delivery strategy | ask-on-risk (user requested ask-always) |
-| Chain strategy | pending |
+| Field                   | Value                                   |
+| ----------------------- | --------------------------------------- |
+| Estimated changed lines | ~150-200                                |
+| 400-line budget risk    | Low                                     |
+| Chained PRs recommended | No                                      |
+| Suggested split         | Single PR                               |
+| Delivery strategy       | ask-on-risk (user requested ask-always) |
+| Chain strategy          | pending                                 |
 
 Decision needed before apply: Yes
 Chained PRs recommended: No
@@ -22,9 +22,9 @@ The proposal listed 4 individual hooks (`useParkById`, `useParkWeather`, `usePar
 
 ### Suggested Work Units
 
-| Unit | Goal | Likely PR | Notes |
-|------|------|-----------|-------|
-| 1 | Full refactor in one delivery | PR 1 | Single PR — under 400 lines, changes are tightly coupled (context → screens → tests) |
+| Unit | Goal                          | Likely PR | Notes                                                                                |
+| ---- | ----------------------------- | --------- | ------------------------------------------------------------------------------------ |
+| 1    | Full refactor in one delivery | PR 1      | Single PR — under 400 lines, changes are tightly coupled (context → screens → tests) |
 
 ## Phase 1: Foundation
 

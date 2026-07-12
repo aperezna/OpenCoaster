@@ -6,10 +6,7 @@ interface SearchBarProps {
   onNameChange: (name: string) => void;
 }
 
-export function SearchBar({
-  name,
-  onNameChange,
-}: SearchBarProps): React.JSX.Element {
+export function SearchBar({ name, onNameChange }: SearchBarProps): React.JSX.Element {
   return (
     <View testID="search-bar" style={styles.container}>
       <TextInput

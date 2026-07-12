@@ -13,8 +13,12 @@ function mockElement(type) {
 const AnimatedValue = function (val) {
   this._value = val;
 };
-AnimatedValue.prototype.setValue = function (v) { this._value = v; };
-AnimatedValue.prototype.interpolate = function () { return { _value: this._value }; };
+AnimatedValue.prototype.setValue = function (v) {
+  this._value = v;
+};
+AnimatedValue.prototype.interpolate = function () {
+  return { _value: this._value };
+};
 
 const FlatListComponent = React.forwardRef(function (props, ref) {
   const { data, renderItem, keyExtractor, ListEmptyComponent, ...rest } = props || {};
@@ -52,27 +56,49 @@ module.exports = {
   TouchableOpacity: mockElement('TouchableOpacity'),
   TouchableHighlight: mockElement('TouchableHighlight'),
   StyleSheet: {
-    create: function (styles) { return styles; },
-    flatten: function (style) { return style; },
+    create: function (styles) {
+      return styles;
+    },
+    flatten: function (style) {
+      return style;
+    },
     hairlineWidth: 0.5,
     absoluteFill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   },
   Platform: {
     OS: 'ios',
-    select: function (obj) { return obj.ios || obj.default; },
+    select: function (obj) {
+      return obj.ios || obj.default;
+    },
   },
   Dimensions: {
-    get: function () { return { width: 390, height: 844 }; },
-    addEventListener: function () { return { remove: function () {} }; },
+    get: function () {
+      return { width: 390, height: 844 };
+    },
+    addEventListener: function () {
+      return { remove: function () {} };
+    },
     removeEventListener: function () {},
   },
   Animated: {
     View: mockElement('AnimatedView'),
     Text: mockElement('AnimatedText'),
     ScrollView: mockElement('AnimatedScrollView'),
-    createAnimatedComponent: function (comp) { return comp; },
-    timing: function () { return { start: function () {} }; },
-    spring: function () { return { start: function () {} }; },
+    createAnimatedComponent: function (comp) {
+      return comp;
+    },
+    timing: function () {
+      return { start: function () {}, stop: function () {} };
+    },
+    spring: function () {
+      return { start: function () {}, stop: function () {} };
+    },
+    loop: function () {
+      return { start: function () {}, stop: function () {} };
+    },
+    sequence: function () {
+      return { start: function () {}, stop: function () {} };
+    },
     Value: AnimatedValue,
   },
   I18nManager: {
@@ -84,7 +110,9 @@ module.exports = {
   SectionList: mockElement('SectionList'),
   KeyboardAvoidingView: mockElement('KeyboardAvoidingView'),
   Keyboard: {
-    addListener: function () { return { remove: function () {} }; },
+    addListener: function () {
+      return { remove: function () {} };
+    },
     removeListener: function () {},
     dismiss: function () {},
   },
@@ -104,7 +132,9 @@ module.exports = {
   },
   AppRegistry: {
     registerComponent: function () {},
-    getAppKeys: function () { return []; },
+    getAppKeys: function () {
+      return [];
+    },
     runApplication: function () {},
     unmountApplicationComponentAtRootTag: function () {},
   },
@@ -112,22 +142,44 @@ module.exports = {
     ignoreWarnings: function () {},
   },
   Linking: {
-    openURL: function () { return Promise.resolve(); },
-    canOpenURL: function () { return Promise.resolve(false); },
-    addEventListener: function () { return { remove: function () {} }; },
+    openURL: function () {
+      return Promise.resolve();
+    },
+    canOpenURL: function () {
+      return Promise.resolve(false);
+    },
+    addEventListener: function () {
+      return { remove: function () {} };
+    },
     removeEventListener: function () {},
   },
   PixelRatio: {
-    get: function () { return 2; },
-    getFontScale: function () { return 1; },
-    getPixelSizeForLayoutSize: function (s) { return s; },
-    roundToNearestPixel: function (s) { return s; },
+    get: function () {
+      return 2;
+    },
+    getFontScale: function () {
+      return 1;
+    },
+    getPixelSizeForLayoutSize: function (s) {
+      return s;
+    },
+    roundToNearestPixel: function (s) {
+      return s;
+    },
     startDetecting: function () {},
   },
   Appearance: {
-    getColorScheme: function () { return 'light'; },
-    addChangeListener: function () { return { remove: function () {} }; },
+    getColorScheme: function () {
+      return 'light';
+    },
+    addChangeListener: function () {
+      return { remove: function () {} };
+    },
   },
-  useColorScheme: function () { return 'light'; },
-  findNodeHandle: function () { return 1; },
+  useColorScheme: function () {
+    return 'light';
+  },
+  findNodeHandle: function () {
+    return 1;
+  },
 };

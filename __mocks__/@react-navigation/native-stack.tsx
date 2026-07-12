@@ -2,16 +2,22 @@ import React from 'react';
 import { View, Text } from 'react-native';
 
 // Mock for @react-navigation/native-stack
+// Handles initialParams, auto-detected initialRouteName, and dynamic routes
 
-let mockInitialRouteName = 'Discovery';
-const registeredScreens: Record<string, React.ComponentType<any>> = {};
-
-const routeMap: Record<string, { key: string; name: string; params: Record<string, any> }> = {
-  Discovery: { key: 'Discovery', name: 'Discovery', params: {} },
-  ParkDetail: { key: 'ParkDetail', name: 'ParkDetail', params: { parkId: 'test-park' } },
-};
+const registeredScreens: Record<
+  string,
+  {
+    component: React.ComponentType<any>;
+    initialParams?: Record<string, any>;
+  }
+> = {};
 
 export function createNativeStackNavigator() {
+  // Reset on each call to prevent stale registrations across tests
+  for (const key of Object.keys(registeredScreens)) {
+    delete registeredScreens[key];
+  }
+
   return {
     Navigator: ({
       children,
@@ -20,7 +26,9 @@ export function createNativeStackNavigator() {
       children: React.ReactNode;
       initialRouteName?: string;
     }) => {
-      mockInitialRouteName = initialRouteName ?? 'Discovery';
+      let firstScreenName: string | undefined;
+      const screenNames: string[] = [];
+
       // Collect screen registrations from children
       React.Children.forEach(children, (child) => {
         if (
@@ -30,28 +38,46 @@ export function createNativeStackNavigator() {
           'name' in child.props &&
           'component' in child.props
         ) {
-          const props = child.props as { name: string; component: React.ComponentType<any> };
-          registeredScreens[props.name] = props.component;
+          const props = child.props as {
+            name: string;
+            component: React.ComponentType<any>;
+            initialParams?: Record<string, any>;
+          };
+          registeredScreens[props.name] = {
+            component: props.component,
+            initialParams: props.initialParams,
+          };
+          screenNames.push(props.name);
+          if (!firstScreenName) {
+            firstScreenName = props.name;
+          }
         }
       });
-      const ScreenComponent = registeredScreens[mockInitialRouteName];
-      const route = routeMap[mockInitialRouteName] ?? {
-        key: 'UnknownRoute',
-        name: mockInitialRouteName,
-        params: {},
+
+      const resolvedInitial = initialRouteName ?? firstScreenName ?? 'Discovery';
+      const screenEntry = registeredScreens[resolvedInitial];
+      const route = {
+        key: resolvedInitial,
+        name: resolvedInitial,
+        params: screenEntry?.initialParams ?? {},
       };
       const navigation = {
         navigate: jest.fn().mockName('navigate'),
         goBack: jest.fn().mockName('goBack'),
         setOptions: jest.fn().mockName('setOptions'),
+        setParams: jest.fn().mockName('setParams'),
         addListener: jest.fn().mockName('addListener').mockReturnValue(jest.fn()),
+        getParent: jest.fn().mockName('getParent').mockReturnValue(null),
       };
+
       return React.createElement(
         View,
         { testID: 'stack-navigator' },
-        ScreenComponent
-          ? React.createElement(ScreenComponent, { route, navigation })
-          : React.createElement(View, { testID: 'fallback-view' },
+        screenEntry
+          ? React.createElement(screenEntry.component, { route, navigation })
+          : React.createElement(
+              View,
+              { testID: 'fallback-view' },
               React.createElement(Text, null, 'Screen not found'),
             ),
       );
@@ -59,11 +85,13 @@ export function createNativeStackNavigator() {
     Screen: ({
       name,
       component: Component,
+      initialParams,
     }: {
       name: string;
       component: React.ComponentType<any>;
+      initialParams?: Record<string, any>;
     }) => {
-      registeredScreens[name] = Component;
+      registeredScreens[name] = { component: Component, initialParams };
       return null;
     },
     Group: ({ children }: { children: React.ReactNode }) =>

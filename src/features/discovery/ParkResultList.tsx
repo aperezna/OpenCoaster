@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import type { ParkSummary } from '../../data/models/ParkSummary';
 
 interface ParkResultListProps {
@@ -13,10 +7,7 @@ interface ParkResultListProps {
   onParkPress: (parkId: string) => void;
 }
 
-export function ParkResultList({
-  parks,
-  onParkPress,
-}: ParkResultListProps): React.JSX.Element {
+export function ParkResultList({ parks, onParkPress }: ParkResultListProps): React.JSX.Element {
   if (parks.length === 0) {
     return (
       <View testID="park-result-list-empty" style={styles.emptyContainer}>
@@ -39,7 +30,8 @@ export function ParkResultList({
           <Text style={styles.parkName}>{item.name}</Text>
           {item.city ? (
             <Text style={styles.parkMeta}>
-              {item.city}{item.country ? `, ${item.country}` : ''}
+              {item.city}
+              {item.country ? `, ${item.country}` : ''}
             </Text>
           ) : null}
         </TouchableOpacity>

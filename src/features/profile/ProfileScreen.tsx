@@ -1,20 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
+import { useFavorites } from '../favorites/useFavorites';
+import { ProfileSkeleton } from '../../components/Skeleton';
 import type { UserProfile } from '../../data/models/UserProfile';
+import type { FavoritePark } from '../../data/models/FavoritePark';
 
 export function ProfileScreen(): React.JSX.Element {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const provider = useParkDiscoveryProvider();
+  const { favorites } = useFavorites();
+  const navigation = useNavigation();
 
   useEffect(() => {
     provider.getUserProfile().then(setProfile);
   }, [provider]);
 
+  const handleFavoritePress = (item: FavoritePark) => {
+    (navigation.navigate as unknown as (name: string, params: unknown) => void)('Parques', {
+      screen: 'ParkDetail',
+      params: { parkId: item.parkId },
+    });
+  };
+
   if (!profile) {
     return (
       <View testID="profile-screen" style={styles.container}>
-        <Text>Loading...</Text>
+        <ProfileSkeleton />
       </View>
     );
   }
@@ -24,15 +37,11 @@ export function ProfileScreen(): React.JSX.Element {
       <View testID="profile-avatar" style={styles.avatarContainer}>
         {profile.avatarUrl ? (
           <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitial}>
-              {profile.username.charAt(0).toUpperCase()}
-            </Text>
+            <Text style={styles.avatarInitial}>{profile.username.charAt(0).toUpperCase()}</Text>
           </View>
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitial}>
-              {profile.username.charAt(0).toUpperCase()}
-            </Text>
+            <Text style={styles.avatarInitial}>{profile.username.charAt(0).toUpperCase()}</Text>
           </View>
         )}
       </View>
@@ -51,11 +60,29 @@ export function ProfileScreen(): React.JSX.Element {
         </Text>
       </View>
 
-      <TouchableOpacity
-        testID="logout-button"
-        style={styles.logoutButton}
-        onPress={() => {}}
-      >
+      {/* Favorites section */}
+      <View style={styles.favoritesSection}>
+        <Text style={styles.favoritesTitle}>Favorites</Text>
+        {favorites.length === 0 ? (
+          <Text style={styles.emptyFavorites}>No favorites yet</Text>
+        ) : (
+          <FlatList
+            data={favorites}
+            keyExtractor={(item) => item.parkId}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                testID={`favorite-item-${item.parkId}`}
+                style={styles.favoriteItem}
+                onPress={() => handleFavoritePress(item)}
+              >
+                <Text style={styles.favoriteParkName}>{item.parkName}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+      </View>
+
+      <TouchableOpacity testID="logout-button" style={styles.logoutButton} onPress={() => {}}>
         <Text style={styles.logoutText}>Cerrar sesión</Text>
       </TouchableOpacity>
     </View>
@@ -115,6 +142,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#333',
+  },
+  favoritesSection: {
+    width: '100%',
+    marginTop: 24,
+    paddingHorizontal: 16,
+  },
+  favoritesTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  emptyFavorites: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
+  favoriteItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  favoriteParkName: {
+    fontSize: 16,
+    color: '#4A90D9',
   },
   logoutButton: {
     width: '100%',

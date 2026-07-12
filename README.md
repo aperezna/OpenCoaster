@@ -14,15 +14,15 @@ OpenCoaster es una app mobile hecha con **React Native + Expo** que te permite e
 
 ## 🛠 Stack
 
-| Capa | Tecnología |
-|------|-----------|
-| Framework | React Native 0.76 + Expo 52 |
+| Capa       | Tecnología                             |
+| ---------- | -------------------------------------- |
+| Framework  | React Native 0.76 + Expo 52            |
 | Navegación | React Navigation (bottom tabs + stack) |
-| Mapas | Leaflet + WebView (OpenStreetMap) |
-| Cache | TanStack React Query |
-| Ubicación | Expo Location |
-| Tests | Jest + Testing Library |
-| Tipado | TypeScript 5.6 |
+| Mapas      | Leaflet + WebView (OpenStreetMap)      |
+| Cache      | TanStack React Query                   |
+| Ubicación  | Expo Location                          |
+| Tests      | Jest + Testing Library                 |
+| Tipado     | TypeScript 5.6                         |
 
 ## 🚀 Arrancar
 

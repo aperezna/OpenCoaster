@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react-native';
 import { ParkDetailScreen } from '../ParkDetailScreen';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
 import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscoveryProviderContext';
@@ -36,6 +36,18 @@ describe('ParkDetailScreen', () => {
       name: 'Parques',
       params: { parkId: 'magic-kingdom' },
     });
+  });
+
+  it('should show skeleton while loading and hide it after data loads', async () => {
+    renderWithProviders();
+    // Skeleton is visible initially while loading
+    expect(screen.getByTestId('park-detail-skeleton')).toBeOnTheScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('park-photo')).toBeTruthy();
+    });
+    // Skeleton should be gone once data is loaded
+    expect(screen.queryByTestId('park-detail-skeleton')).toBeNull();
   });
 
   it('should show park name and city when park exists', async () => {
@@ -126,9 +138,75 @@ describe('ParkDetailScreen', () => {
     // This test verifies the fallback chain works without crashing
     renderWithProviders();
     await waitFor(() => {
-      expect(
-        screen.getByText('Park not found'),
-      ).toBeTruthy();
+      expect(screen.getByText('Park not found')).toBeTruthy();
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Favorites toggle tests
+// ---------------------------------------------------------------------------
+
+let mockUseFavorites = {
+  favorites: [] as Array<{ parkId: string; parkName: string; addedAt: string }>,
+  isFavorite: (_id: string) => false,
+  toggleFavorite: (_id: string, _name: string) => {},
+};
+
+jest.mock('../../favorites/useFavorites', () => ({
+  useFavorites: () => mockUseFavorites,
+}));
+
+describe('ParkDetailScreen — favorites toggle', () => {
+  beforeEach(() => {
+    mockUseRoute.mockReturnValue({
+      key: 'Parques',
+      name: 'Parques',
+      params: { parkId: 'magic-kingdom' },
+    });
+    mockUseFavorites = {
+      favorites: [],
+      isFavorite: () => false,
+      toggleFavorite: jest.fn(),
+    };
+  });
+
+  it('should render a favorite toggle button', async () => {
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('favorite-toggle')).toBeTruthy();
+    });
+  });
+
+  it('should show filled star when park is favorited', async () => {
+    mockUseFavorites.isFavorite = (id: string) => id === 'magic-kingdom';
+    mockUseFavorites.favorites = [
+      { parkId: 'magic-kingdom', parkName: 'Magic Kingdom', addedAt: '2025-01-01T00:00:00Z' },
+    ];
+
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('favorite-toggle-filled')).toBeTruthy();
+    });
+  });
+
+  it('should show outline star when park is not favorited', async () => {
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('favorite-toggle-outline')).toBeTruthy();
+    });
+  });
+
+  it('should call toggleFavorite when pressed', async () => {
+    const toggleFn = jest.fn();
+    mockUseFavorites.toggleFavorite = toggleFn;
+
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('favorite-toggle')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId('favorite-toggle'));
+    expect(toggleFn).toHaveBeenCalledWith('magic-kingdom', 'Magic Kingdom');
   });
 });

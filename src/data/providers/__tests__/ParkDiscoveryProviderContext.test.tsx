@@ -1,9 +1,11 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
-import { ParkDiscoveryContextProvider, useParkDiscoveryProvider } from '../ParkDiscoveryProviderContext';
+import {
+  ParkDiscoveryContextProvider,
+  useParkDiscoveryProvider,
+} from '../ParkDiscoveryProviderContext';
 import { FixtureParkDiscoveryProvider } from '../ParkDiscoveryProvider';
-import type { ParkDiscoveryProvider } from '../ParkDiscoveryProvider';
 
 // ---------------------------------------------------------------------------
 // Test helpers

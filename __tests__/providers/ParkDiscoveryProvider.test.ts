@@ -14,7 +14,15 @@ describe('Fixture data', () => {
   });
 
   it('should include at least one European park', () => {
-    const euParks = fixtureParks.filter((p: ParkSummary) => p.country === 'FR' || p.country === 'NL' || p.country === 'DE' || p.country === 'ES' || p.country === 'IT' || p.country === 'GB');
+    const euParks = fixtureParks.filter(
+      (p: ParkSummary) =>
+        p.country === 'FR' ||
+        p.country === 'NL' ||
+        p.country === 'DE' ||
+        p.country === 'ES' ||
+        p.country === 'IT' ||
+        p.country === 'GB',
+    );
     expect(euParks.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -50,9 +58,9 @@ describe('FixtureParkDiscoveryProvider', () => {
   it('should filter by exact park name match', async () => {
     const results = await provider.searchParks({ name: 'Magic Kingdom' });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results.every((p: ParkSummary) =>
-      p.name.toLowerCase().includes('magic kingdom')
-    )).toBe(true);
+    expect(results.every((p: ParkSummary) => p.name.toLowerCase().includes('magic kingdom'))).toBe(
+      true,
+    );
   });
 
   it('should return empty array when no park matches', async () => {
@@ -78,7 +86,15 @@ describe('FixtureParkDiscoveryProvider', () => {
       proximity: { latitude: 28.4, longitude: -81.6, radiusKm: 10 },
     });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results.every((p: ParkSummary) => p.id === 'magic-kingdom' || p.id === 'epcot' || p.id === 'hollywood-studios' || p.id === 'animal-kingdom')).toBe(true);
+    expect(
+      results.every(
+        (p: ParkSummary) =>
+          p.id === 'magic-kingdom' ||
+          p.id === 'epcot' ||
+          p.id === 'hollywood-studios' ||
+          p.id === 'animal-kingdom',
+      ),
+    ).toBe(true);
   });
 
   it('should filter by proximity radius returning no results far away', async () => {

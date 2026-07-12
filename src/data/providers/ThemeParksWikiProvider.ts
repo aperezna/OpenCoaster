@@ -23,7 +23,7 @@ interface ThemeParksMedia {
   phone?: string;
 }
 
-interface ThemeParksLiveData {
+interface _ThemeParksLiveData {
   status?: string;
   queue?: Record<
     string,
@@ -84,12 +84,7 @@ const EARTH_RADIUS_KM = 6371;
  * Compute the great-circle distance in km between two coordinates using the
  * Haversine formula.
  */
-function haversineKm(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (deg: number): number => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
@@ -165,9 +160,7 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
         signal: controller.signal,
       });
       if (!response.ok) {
-        throw new Error(
-          `ThemeParks.wiki API error: ${response.status} ${response.statusText}`,
-        );
+        throw new Error(`ThemeParks.wiki API error: ${response.status} ${response.statusText}`);
       }
       return response.json() as Promise<T>;
     } finally {
@@ -212,9 +205,7 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
       const batch = destinations.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
         batch.map((dest) =>
-          this.fetchJson<ThemeParksEntity>(`/entity/${dest.id}/children`).catch(
-            () => null,
-          ),
+          this.fetchJson<ThemeParksEntity>(`/entity/${dest.id}/children`).catch(() => null),
         ),
       );
       childrenResponses.push(...results);
@@ -244,8 +235,7 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
     if (proximity) {
       const { latitude, longitude, radiusKm } = proximity;
       results = results.filter(
-        (p) =>
-          haversineKm(latitude, longitude, p.latitude, p.longitude) <= radiusKm,
+        (p) => haversineKm(latitude, longitude, p.latitude, p.longitude) <= radiusKm,
       );
     }
 
@@ -307,9 +297,7 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
 
   async getParkHours(parkId: string): Promise<ParkHours | null> {
     try {
-      const entity = await this.fetchJson<ThemeParksEntity>(
-        `/entity/${parkId}/schedule`,
-      );
+      const entity = await this.fetchJson<ThemeParksEntity>(`/entity/${parkId}/schedule`);
 
       if (!entity.schedule || entity.schedule.length === 0) {
         return null;
@@ -319,9 +307,7 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
       // OPERATING entry in the schedule list.
       const today = new Date().toISOString().split('T')[0];
       const schedule =
-        entity.schedule.find(
-          (h) => h.date === today && h.type === 'OPERATING',
-        ) ??
+        entity.schedule.find((h) => h.date === today && h.type === 'OPERATING') ??
         entity.schedule.find((h) => h.type === 'OPERATING');
 
       if (!schedule?.openingTime || !schedule?.closingTime) {

@@ -1,5 +1,4 @@
 import { createQueryClient, OPENCOASTER_KEY_PREFIX } from '../queryClient';
-import type { QueryClient } from '@tanstack/react-query';
 
 describe('QueryClient configuration', () => {
   it('should create a QueryClient instance', () => {

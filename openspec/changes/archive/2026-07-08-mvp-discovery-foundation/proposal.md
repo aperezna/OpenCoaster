@@ -7,6 +7,7 @@ Bootstrap OpenCoaster Expo app with discovery-first foundation: map, geolocation
 ## Scope
 
 ### In Scope
+
 - Expo + React Native + TypeScript app bootstrap with navigation
 - Map screen (OpenStreetMap), location permission, manual park name + city search
 - Park summary list from search/geolocation
@@ -16,6 +17,7 @@ Bootstrap OpenCoaster Expo app with discovery-first foundation: map, geolocation
 - Fixture-backed tests for geolocation and search flows
 
 ### Out of Scope
+
 - Live provider API integration (ThemeParks.wiki, Queue-Times.com)
 - Rides, lands, queue-time rendering
 - Offline stale-data indicators
@@ -25,6 +27,7 @@ Bootstrap OpenCoaster Expo app with discovery-first foundation: map, geolocation
 ## Capabilities
 
 ### New Capabilities
+
 - `app-bootstrap`: Expo shell, navigation, TanStack Query client setup
 - `map-discovery`: Map with OpenStreetMap, geolocation permission handling, current-location marker
 - `park-discovery-provider`: Provider interface + normalized `ParkSummary` model + fixture data
@@ -32,6 +35,7 @@ Bootstrap OpenCoaster Expo app with discovery-first foundation: map, geolocation
 - `cache-foundation`: TanStack Query config, persisted cache type definitions, storage adapter
 
 ### Modified Capabilities
+
 None — greenfield project, no existing specs.
 
 ## Approach
@@ -40,23 +44,23 @@ Bootstrap Expo with TypeScript. Wire react-native-maps + geolocation as optional
 
 ## Affected Areas
 
-| Area | Impact | Description |
-|------|--------|-------------|
-| `app/` | New | Expo app root, navigation, screens |
-| `app/src/features/discovery/` | New | MapScreen, SearchBar, ParkList |
-| `app/src/features/park-details/` | New | ParkDetailScreen placeholder |
-| `app/src/data/providers/` | New | ParkDiscoveryProvider + fixtures |
-| `app/src/data/models/` | New | ParkSummary model |
-| `app/src/data/cache/` | New | TanStack Query config, storage, TTL |
-| `__tests__/` | New | Geolocation + search flow tests |
+| Area                             | Impact | Description                         |
+| -------------------------------- | ------ | ----------------------------------- |
+| `app/`                           | New    | Expo app root, navigation, screens  |
+| `app/src/features/discovery/`    | New    | MapScreen, SearchBar, ParkList      |
+| `app/src/features/park-details/` | New    | ParkDetailScreen placeholder        |
+| `app/src/data/providers/`        | New    | ParkDiscoveryProvider + fixtures    |
+| `app/src/data/models/`           | New    | ParkSummary model                   |
+| `app/src/data/cache/`            | New    | TanStack Query config, storage, TTL |
+| `__tests__/`                     | New    | Geolocation + search flow tests     |
 
 ## Risks
 
-| Risk | Likelihood | Mitigation |
-|------|------------|------------|
-| react-native-maps Expo setup issues | Med | Pin known-compatible SDK, document |
-| Geolocation untestable on Windows shell | High | Abstract behind interface, test doubles |
-| Provider model rework for real APIs | Low | Design from spec, not provider shape |
+| Risk                                    | Likelihood | Mitigation                              |
+| --------------------------------------- | ---------- | --------------------------------------- |
+| react-native-maps Expo setup issues     | Med        | Pin known-compatible SDK, document      |
+| Geolocation untestable on Windows shell | High       | Abstract behind interface, test doubles |
+| Provider model rework for real APIs     | Low        | Design from spec, not provider shape    |
 
 ## Rollback Plan
 

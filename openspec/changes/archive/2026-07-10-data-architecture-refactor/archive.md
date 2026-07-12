@@ -21,20 +21,21 @@ Pure refactor with two tracks: (1) unify all park data fetching under React Quer
 ## Source of Truth
 
 No main specs were modified. The behavior is covered by existing specs:
+
 - `openspec/specs/park-discovery-provider/spec.md`
 - `openspec/specs/cache-foundation/spec.md`
 - `openspec/specs/app-bootstrap/spec.md`
 
 ## Engram Observation Lineage
 
-| Artifact | Engram ID | Status |
-|----------|-----------|--------|
-| `sdd/data-architecture-refactor/proposal` | #55 | Archived |
-| `sdd/data-architecture-refactor/design` | #56 | Archived |
-| `sdd/data-architecture-refactor/tasks` | #57 | Archived (filesystem has `[x]`; Engram staged version is stale `[ ]` — resolved by filesystem source of truth) |
-| `Data Architecture Refactor — apply-progress` | #58 | Archived |
-| `sdd/data-architecture-refactor/verify-report` | #60 | Archived |
-| `sdd/data-architecture-refactor/archive-report` | (this observation) | Current |
+| Artifact                                        | Engram ID          | Status                                                                                                         |
+| ----------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `sdd/data-architecture-refactor/proposal`       | #55                | Archived                                                                                                       |
+| `sdd/data-architecture-refactor/design`         | #56                | Archived                                                                                                       |
+| `sdd/data-architecture-refactor/tasks`          | #57                | Archived (filesystem has `[x]`; Engram staged version is stale `[ ]` — resolved by filesystem source of truth) |
+| `Data Architecture Refactor — apply-progress`   | #58                | Archived                                                                                                       |
+| `sdd/data-architecture-refactor/verify-report`  | #60                | Archived                                                                                                       |
+| `sdd/data-architecture-refactor/archive-report` | (this observation) | Current                                                                                                        |
 
 ## Verify Report CRITICAL Resolution
 
@@ -42,13 +43,13 @@ The verify report listed a CRITICAL finding: "No `apply-progress` artifact found
 
 ## Archive Contents
 
-| File | Present |
-|------|---------|
-| `proposal.md` | ✅ |
-| `design.md` | ✅ |
-| `tasks.md` | ✅ (10/10 tasks complete) |
-| `verify-report.md` | ✅ (PASS WITH WARNINGS) |
-| `archive.md` | ✅ (this report) |
+| File               | Present                   |
+| ------------------ | ------------------------- |
+| `proposal.md`      | ✅                        |
+| `design.md`        | ✅                        |
+| `tasks.md`         | ✅ (10/10 tasks complete) |
+| `verify-report.md` | ✅ (PASS WITH WARNINGS)   |
+| `archive.md`       | ✅ (this report)          |
 
 ## Verification Summary
 

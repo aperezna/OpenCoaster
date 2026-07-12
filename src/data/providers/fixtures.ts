@@ -56,7 +56,7 @@ export const fixtureWeather: Record<string, ParkWeather> = {
     condition: 'cloudy',
     unit: 'C',
   },
-  'efteling': {
+  efteling: {
     temperature: 18,
     condition: 'rainy',
     unit: 'C',
@@ -74,7 +74,7 @@ export const fixtureHours: Record<string, ParkHours> = {
     closing: '20:00',
     timezone: 'Europe/Paris',
   },
-  'efteling': {
+  efteling: {
     opening: '10:00',
     closing: '18:00',
     timezone: 'Europe/Amsterdam',

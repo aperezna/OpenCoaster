@@ -2,14 +2,14 @@
 
 ## Review Workload Forecast
 
-| Field | Value |
-|-------|-------|
-| Estimated changed lines | ~800–1000 |
-| 400-line budget risk | Medium |
-| Chained PRs recommended | Yes |
-| Suggested split | PR1: Data + Cache + Location → PR2: App shell + Navigation + Features |
-| Delivery strategy | ask-on-risk |
-| Chain strategy | pending |
+| Field                   | Value                                                                 |
+| ----------------------- | --------------------------------------------------------------------- |
+| Estimated changed lines | ~800–1000                                                             |
+| 400-line budget risk    | Medium                                                                |
+| Chained PRs recommended | Yes                                                                   |
+| Suggested split         | PR1: Data + Cache + Location → PR2: App shell + Navigation + Features |
+| Delivery strategy       | ask-on-risk                                                           |
+| Chain strategy          | pending                                                               |
 
 Decision needed before apply: Yes
 Chained PRs recommended: Yes
@@ -18,10 +18,10 @@ Chain strategy: pending
 
 ### Suggested Work Units
 
-| Unit | Goal | Likely PR | Notes |
-|------|------|-----------|-------|
-| 1 | Foundation: types, data layer, cache, location, fixtures + tests | PR 1 | Pure TS, testable without native deps. Base: main. |
-| 2 | App shell: nav, screens, map, search, detail + tests | PR 2 | Depends on PR 1 types/providers. Base: main. |
+| Unit | Goal                                                             | Likely PR | Notes                                              |
+| ---- | ---------------------------------------------------------------- | --------- | -------------------------------------------------- |
+| 1    | Foundation: types, data layer, cache, location, fixtures + tests | PR 1      | Pure TS, testable without native deps. Base: main. |
+| 2    | App shell: nav, screens, map, search, detail + tests             | PR 2      | Depends on PR 1 types/providers. Base: main.       |
 
 ## Phase 1: Types & Config Foundation
 
@@ -72,19 +72,19 @@ Chain strategy: pending
 
 ## Design Coverage
 
-| Design Section | Status | Phases |
-|----------------|--------|--------|
-| ParkSummary model | ✅ Covered | P1 |
-| Cache strategy (staleTime, retry, namespace) | ✅ Covered | P2 |
-| StorageAdapter type | ✅ Covered | P2 |
-| ParkDiscoveryProvider + FixtureProvider | ✅ Covered | P3 |
-| Fixture data (3 parks, US+EU) | ✅ Covered | P3 |
-| LocationService interface + ExpoLocationService | ✅ Covered | P4 |
-| FakeLocationService test double | ✅ Covered | P4 |
-| RootNavigator (3 routes) | ✅ Covered | P5 |
-| App.tsx (QueryClientProvider + NavigationContainer) | ✅ Covered | P6 |
-| DiscoveryScreen (map + search composition) | ✅ Covered | P7 |
-| SearchBar (name + city) | ✅ Covered | P7 |
-| ParkResultList (+ empty state) | ✅ Covered | P7 |
-| useSearchParks hook | ✅ Covered | P7 |
-| ParkDetailScreen placeholder | ✅ Covered | P8 |
+| Design Section                                      | Status     | Phases |
+| --------------------------------------------------- | ---------- | ------ |
+| ParkSummary model                                   | ✅ Covered | P1     |
+| Cache strategy (staleTime, retry, namespace)        | ✅ Covered | P2     |
+| StorageAdapter type                                 | ✅ Covered | P2     |
+| ParkDiscoveryProvider + FixtureProvider             | ✅ Covered | P3     |
+| Fixture data (3 parks, US+EU)                       | ✅ Covered | P3     |
+| LocationService interface + ExpoLocationService     | ✅ Covered | P4     |
+| FakeLocationService test double                     | ✅ Covered | P4     |
+| RootNavigator (3 routes)                            | ✅ Covered | P5     |
+| App.tsx (QueryClientProvider + NavigationContainer) | ✅ Covered | P6     |
+| DiscoveryScreen (map + search composition)          | ✅ Covered | P7     |
+| SearchBar (name + city)                             | ✅ Covered | P7     |
+| ParkResultList (+ empty state)                      | ✅ Covered | P7     |
+| useSearchParks hook                                 | ✅ Covered | P7     |
+| ParkDetailScreen placeholder                        | ✅ Covered | P8     |

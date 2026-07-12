@@ -24,17 +24,13 @@ const mockParks: ParkSummary[] = [
 
 describe('ParkResultList', () => {
   it('should render a list of parks', async () => {
-    await render(
-      <ParkResultList parks={mockParks} onParkPress={() => {}} />,
-    );
+    await render(<ParkResultList parks={mockParks} onParkPress={() => {}} />);
     expect(screen.getByText('Magic Kingdom')).toBeTruthy();
     expect(screen.getByText('Efteling')).toBeTruthy();
   });
 
   it('should show city and country for each park', async () => {
-    await render(
-      <ParkResultList parks={mockParks} onParkPress={() => {}} />,
-    );
+    await render(<ParkResultList parks={mockParks} onParkPress={() => {}} />);
     expect(screen.getByText(/Orlando/)).toBeTruthy();
     expect(screen.getByText(/Kaatsheuvel/)).toBeTruthy();
     expect(screen.getByText(/US/)).toBeTruthy();
@@ -43,9 +39,7 @@ describe('ParkResultList', () => {
 
   it('should call onParkPress when a park item is pressed', async () => {
     const onParkPress = jest.fn();
-    await render(
-      <ParkResultList parks={mockParks} onParkPress={onParkPress} />,
-    );
+    await render(<ParkResultList parks={mockParks} onParkPress={onParkPress} />);
     fireEvent.press(screen.getByText('Magic Kingdom'));
     expect(onParkPress).toHaveBeenCalledWith('park-1');
   });
@@ -61,25 +55,19 @@ describe('ParkResultList', () => {
         longitude: 0,
       },
     ];
-    await render(
-      <ParkResultList parks={parksWithoutCity} onParkPress={() => {}} />,
-    );
+    await render(<ParkResultList parks={parksWithoutCity} onParkPress={() => {}} />);
     expect(screen.getByText('Test Park')).toBeTruthy();
     // Should not render a meta line for empty city/country
     expect(screen.queryByTestId('park-item-park-3')).toBeTruthy();
   });
 
   it('should show empty state when no parks', async () => {
-    await render(
-      <ParkResultList parks={[]} onParkPress={() => {}} />,
-    );
+    await render(<ParkResultList parks={[]} onParkPress={() => {}} />);
     expect(screen.getByText('No parks found')).toBeTruthy();
   });
 
   it('should show "No parks found" for empty search results', async () => {
-    await render(
-      <ParkResultList parks={[]} onParkPress={() => {}} />,
-    );
+    await render(<ParkResultList parks={[]} onParkPress={() => {}} />);
     // Should be the only prominent message
     expect(screen.getByText('No parks found')).toBeTruthy();
     // No items should be rendered

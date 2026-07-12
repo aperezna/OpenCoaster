@@ -4,7 +4,10 @@ import { View, Text } from 'react-native';
 // Mock for @react-navigation/bottom-tabs
 
 let mockInitialRouteName = 'Mapa';
-const registeredScreens: Record<string, React.ComponentType<any> | ((props: any) => React.ReactElement)> = {};
+const registeredScreens: Record<
+  string,
+  React.ComponentType<any> | ((props: any) => React.ReactElement)
+> = {};
 
 const routeMap: Record<string, { key: string; name: string; params: Record<string, any> }> = {
   Mapa: { key: 'Mapa', name: 'Mapa', params: {} },
@@ -62,11 +65,10 @@ export function createBottomTabNavigator() {
         screenEntry
           ? typeof screenEntry === 'function'
             ? (screenEntry as (props: any) => React.ReactElement)({ route, navigation })
-            : React.createElement(
-                screenEntry as React.ComponentType<any>,
-                { route, navigation },
-              )
-          : React.createElement(View, { testID: 'fallback-view' },
+            : React.createElement(screenEntry as React.ComponentType<any>, { route, navigation })
+          : React.createElement(
+              View,
+              { testID: 'fallback-view' },
               React.createElement(Text, null, 'Screen not found'),
             ),
       );

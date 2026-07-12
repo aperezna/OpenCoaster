@@ -19,23 +19,16 @@ module.exports = {
     ],
     '^.+\\.jsx?$': 'babel-jest',
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(@tanstack|expo-.*)/)',
-  ],
+  transformIgnorePatterns: ['node_modules/(?!(@tanstack|expo-.*)/)'],
   moduleNameMapper: {
     '^react-native$': '<rootDir>/__mocks__/react-native.js',
-    '^expo-location$':
-      '<rootDir>/src/data/location/__tests__/FakeLocationService.ts',
+    '^expo-location$': '<rootDir>/src/data/location/__tests__/FakeLocationService.ts',
     '^react-native-maps$': '<rootDir>/__mocks__/react-native-maps.ts',
     '^react-native-webview$': '<rootDir>/__mocks__/react-native-webview.js',
     '^react-native-screens$': '<rootDir>/__mocks__/react-native-screens.ts',
-    '^react-native-safe-area-context$':
-      '<rootDir>/__mocks__/react-native-safe-area-context.ts',
-    '^@react-navigation/native$':
-      '<rootDir>/__mocks__/@react-navigation/native.tsx',
-    '^@react-navigation/native-stack$':
-      '<rootDir>/__mocks__/@react-navigation/native-stack.tsx',
-    '^@react-navigation/bottom-tabs$':
-      '<rootDir>/__mocks__/@react-navigation/bottom-tabs.tsx',
+    '^react-native-safe-area-context$': '<rootDir>/__mocks__/react-native-safe-area-context.ts',
+    '^@react-navigation/native$': '<rootDir>/__mocks__/@react-navigation/native.tsx',
+    '^@react-navigation/native-stack$': '<rootDir>/__mocks__/@react-navigation/native-stack.tsx',
+    '^@react-navigation/bottom-tabs$': '<rootDir>/__mocks__/@react-navigation/bottom-tabs.tsx',
   },
 };
