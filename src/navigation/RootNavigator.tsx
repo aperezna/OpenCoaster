@@ -1,6 +1,6 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { DiscoveryScreen } from '../features/discovery/DiscoveryScreen';
@@ -8,6 +8,7 @@ import { ParquesStackNavigator } from './ParquesStackNavigator';
 import type { ParquesStackParamList } from './ParquesStackNavigator';
 import { ProfileScreen } from '../features/profile/ProfileScreen';
 import { useTheme } from '../theme/ThemeContext';
+import type { ThemeColors } from '../theme/colors';
 
 export type RootTabParamList = {
   Mapa: undefined;
@@ -46,6 +47,7 @@ export function RootNavigator({
   initialRouteName = 'Mapa',
 }: RootNavigatorProps): React.JSX.Element {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
 
   if (!validRoutes[initialRouteName as string]) {
     return <FallbackView />;
@@ -58,6 +60,10 @@ export function RootNavigator({
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
+        tabBarStyle: styles.tabBar,
+        tabBarItemStyle: styles.tabBarItem,
+        tabBarIconStyle: styles.tabBarIcon,
+        tabBarLabelStyle: styles.tabBarLabel,
         tabBarIcon: ({ focused, color, size }) => (
           <Ionicons
             name={getTabBarIconName(route.name as keyof RootTabParamList, focused)}
@@ -72,4 +78,32 @@ export function RootNavigator({
       <Tab.Screen name="Usuario" component={ProfileScreen} />
     </Tab.Navigator>
   );
+}
+
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    tabBar: {
+      backgroundColor: colors.surface,
+      borderTopColor: colors.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      height: 68,
+      paddingTop: 8,
+      paddingBottom: 8,
+      shadowColor: colors.cardShadow,
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    tabBarItem: {
+      paddingVertical: 4,
+    },
+    tabBarIcon: {
+      marginBottom: 2,
+    },
+    tabBarLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+  });
 }
