@@ -16,7 +16,12 @@ import { useFavorites } from '../favorites/useFavorites';
 import { WeatherCard } from './WeatherCard';
 import { HoursCard } from './HoursCard';
 import { AttractionList } from './AttractionList';
-import { ParkDetailSkeleton } from '../../components/Skeleton';
+import {
+  ParkDetailSkeleton,
+  WeatherCardSkeleton,
+  HoursCardSkeleton,
+  AttractionListSkeleton,
+} from '../../components/Skeleton';
 import ErrorState from '../../components/ErrorState';
 import type { RouteProp } from '@react-navigation/native';
 import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigator';
@@ -36,6 +41,9 @@ export function ParkDetailScreen(): React.JSX.Element {
     attractions,
     isLoading: _isLoading,
     isParkLoading,
+    isWeatherLoading,
+    isHoursLoading,
+    isAttractionsLoading,
     isFetching,
     error,
     refetchAll,
@@ -130,14 +138,22 @@ export function ParkDetailScreen(): React.JSX.Element {
         </TouchableOpacity>
       </View>
 
-      {/* Weather + Hours cards row */}
+      {/* Weather + Hours cards row with individual loading */}
       <View style={styles.cardsRow}>
-        {weather ? <WeatherCard weather={weather} /> : null}
-        {hours ? <HoursCard hours={hours} /> : null}
+        {weather ? (
+          <WeatherCard weather={weather} />
+        ) : isWeatherLoading ? (
+          <WeatherCardSkeleton />
+        ) : null}
+        {hours ? <HoursCard hours={hours} /> : isHoursLoading ? <HoursCardSkeleton /> : null}
       </View>
 
-      {/* Attractions */}
-      <AttractionList attractions={attractions ?? []} />
+      {/* Attractions with individual loading */}
+      {attractions ? (
+        <AttractionList attractions={attractions} />
+      ) : isAttractionsLoading ? (
+        <AttractionListSkeleton />
+      ) : null}
     </ScrollView>
   );
 }

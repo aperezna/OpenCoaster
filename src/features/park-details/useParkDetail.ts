@@ -16,6 +16,9 @@ export function useParkDetail(
   attractions: Attraction[] | undefined;
   isLoading: boolean;
   isParkLoading: boolean;
+  isWeatherLoading: boolean;
+  isHoursLoading: boolean;
+  isAttractionsLoading: boolean;
   isFetching: boolean;
   error: Error | null;
   refetchAll: () => void;
@@ -54,6 +57,9 @@ export function useParkDetail(
     attractions: attractionsQuery.data,
     isLoading,
     isParkLoading: parkQuery.isLoading,
+    isWeatherLoading: weatherQuery.isLoading,
+    isHoursLoading: hoursQuery.isLoading,
+    isAttractionsLoading: attractionsQuery.isLoading,
     isFetching,
     error: firstError?.error instanceof Error ? (firstError.error as Error) : null,
     refetchAll: () => {

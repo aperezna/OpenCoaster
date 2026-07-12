@@ -6,8 +6,18 @@ interface HoursCardProps {
   hours: ParkHours;
 }
 
-/** Extract a readable time (e.g. "9:00 AM") from an ISO datetime string. */
+/** Extract a readable time (e.g. "9:00 AM") from an ISO datetime or plain time string. */
 function formatTime(iso: string): string {
+  // Handle plain time strings like "09:00" directly
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(iso)) {
+    const [h, m] = iso.split(':');
+    const hour = parseInt(h ?? '0', 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${display}:${m?.padStart(2, '0') ?? '00'} ${ampm}`;
+  }
+
+  // Try parsing as ISO date
   try {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return iso;
@@ -15,7 +25,6 @@ function formatTime(iso: string): string {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
-      timeZone: 'America/New_York',
     });
   } catch {
     return iso;

@@ -298,4 +298,166 @@ const styles = StyleSheet.create({
   },
 });
 
-export { SkeletonBlock, ParkDetailSkeleton, ParksListSkeleton, ProfileSkeleton };
+// ---------------------------------------------------------------------------
+// WeatherCardSkeleton — matches WeatherCard layout
+// ---------------------------------------------------------------------------
+
+function WeatherCardSkeleton(): React.JSX.Element {
+  return (
+    <View style={cardSkeletonStyles.cardSkeleton} testID="weather-card-skeleton">
+      <SkeletonBlock
+        width={40}
+        height={14}
+        borderRadius={4}
+        style={cardSkeletonStyles.cardTitleSkeleton}
+      />
+      <View style={cardSkeletonStyles.cardContentCenter}>
+        <SkeletonBlock
+          width={36}
+          height={36}
+          borderRadius={18}
+          style={cardSkeletonStyles.cardEmojiSkeleton}
+        />
+        <SkeletonBlock
+          width={60}
+          height={28}
+          borderRadius={4}
+          style={cardSkeletonStyles.cardValueSkeleton}
+        />
+        <SkeletonBlock width={50} height={14} borderRadius={4} />
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// HoursCardSkeleton — matches HoursCard layout
+// ---------------------------------------------------------------------------
+
+function HoursCardSkeleton(): React.JSX.Element {
+  return (
+    <View style={cardSkeletonStyles.cardSkeleton} testID="hours-card-skeleton">
+      <SkeletonBlock
+        width={50}
+        height={14}
+        borderRadius={4}
+        style={cardSkeletonStyles.cardTitleSkeleton}
+      />
+      <View style={cardSkeletonStyles.cardContentCenter}>
+        <SkeletonBlock
+          width={40}
+          height={12}
+          borderRadius={4}
+          style={cardSkeletonStyles.cardLabelSkeleton}
+        />
+        <SkeletonBlock
+          width={70}
+          height={20}
+          borderRadius={4}
+          style={cardSkeletonStyles.cardValueSkeleton}
+        />
+        <SkeletonBlock
+          width={40}
+          height={12}
+          borderRadius={4}
+          style={cardSkeletonStyles.cardLabelSkeleton}
+        />
+        <SkeletonBlock width={70} height={20} borderRadius={4} />
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AttractionListSkeleton — a few item rows
+// ---------------------------------------------------------------------------
+
+function AttractionListSkeleton(): React.JSX.Element {
+  return (
+    <View style={cardSkeletonStyles.attractionListSkeleton} testID="attraction-list-skeleton">
+      <SkeletonBlock
+        width={120}
+        height={18}
+        borderRadius={4}
+        style={cardSkeletonStyles.sectionTitleSkeleton}
+      />
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={cardSkeletonStyles.attractionItemSkeleton}>
+          <View style={cardSkeletonStyles.attractionItemLeft}>
+            <SkeletonBlock
+              width="60%"
+              height={16}
+              borderRadius={4}
+              style={cardSkeletonStyles.attrNameSkeleton}
+            />
+            <SkeletonBlock width="30%" height={12} borderRadius={4} />
+          </View>
+          <SkeletonBlock width={50} height={16} borderRadius={4} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Style additions for card skeletons
+// ---------------------------------------------------------------------------
+
+const cardSkeletonStyles = StyleSheet.create({
+  cardSkeleton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 4,
+  },
+  cardContentCenter: {
+    alignItems: 'center',
+  },
+  cardTitleSkeleton: {
+    marginBottom: 12,
+  },
+  cardEmojiSkeleton: {
+    marginBottom: 8,
+  },
+  cardValueSkeleton: {
+    marginBottom: 4,
+  },
+  cardLabelSkeleton: {
+    marginBottom: 4,
+  },
+  attractionListSkeleton: {
+    marginTop: 16,
+    paddingHorizontal: 16,
+  },
+  sectionTitleSkeleton: {
+    marginBottom: 12,
+  },
+  attractionItemSkeleton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  attractionItemLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  attrNameSkeleton: {
+    marginBottom: 4,
+  },
+});
+
+export {
+  SkeletonBlock,
+  ParkDetailSkeleton,
+  ParksListSkeleton,
+  ProfileSkeleton,
+  WeatherCardSkeleton,
+  HoursCardSkeleton,
+  AttractionListSkeleton,
+};
