@@ -15,14 +15,26 @@ const routeMap: Record<string, { key: string; name: string; params: Record<strin
   Usuario: { key: 'Usuario', name: 'Usuario', params: {} },
 };
 
+type MockRoute = { key: string; name: string; params: Record<string, any> };
+
+type ScreenOptions =
+  | {
+      tabBarIcon?: (props: { focused: boolean; color: string; size: number }) => React.ReactNode;
+    }
+  | ((props: { route: MockRoute }) => {
+      tabBarIcon?: (props: { focused: boolean; color: string; size: number }) => React.ReactNode;
+    });
+
 export function createBottomTabNavigator() {
   return {
     Navigator: ({
       children,
       initialRouteName,
+      screenOptions,
     }: {
       children: React.ReactNode;
       initialRouteName?: string;
+      screenOptions?: ScreenOptions;
     }) => {
       mockInitialRouteName = initialRouteName ?? 'Mapa';
       // Clear any previously registered screens
@@ -52,6 +64,8 @@ export function createBottomTabNavigator() {
         name: mockInitialRouteName,
         params: {},
       };
+      const resolvedScreenOptions =
+        typeof screenOptions === 'function' ? screenOptions({ route }) : screenOptions;
       const navigation = {
         navigate: jest.fn().mockName('navigate'),
         goBack: jest.fn().mockName('goBack'),
@@ -62,6 +76,17 @@ export function createBottomTabNavigator() {
       return React.createElement(
         View,
         { testID: 'tab-navigator' },
+        resolvedScreenOptions?.tabBarIcon
+          ? React.createElement(
+              View,
+              { testID: `tab-icon-${route.name}` },
+              resolvedScreenOptions.tabBarIcon({
+                focused: true,
+                color: '#007AFF',
+                size: 24,
+              }),
+            )
+          : null,
         screenEntry
           ? typeof screenEntry === 'function'
             ? (screenEntry as (props: any) => React.ReactElement)({ route, navigation })

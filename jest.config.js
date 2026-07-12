@@ -27,6 +27,7 @@ module.exports = {
     '^react-native-webview$': '<rootDir>/__mocks__/react-native-webview.js',
     '^react-native-screens$': '<rootDir>/__mocks__/react-native-screens.ts',
     '^react-native-safe-area-context$': '<rootDir>/__mocks__/react-native-safe-area-context.ts',
+    '^@expo/vector-icons$': '<rootDir>/__mocks__/@expo/vector-icons.tsx',
     '^@react-navigation/native$': '<rootDir>/__mocks__/@react-navigation/native.tsx',
     '^@react-navigation/native-stack$': '<rootDir>/__mocks__/@react-navigation/native-stack.tsx',
     '^@react-navigation/bottom-tabs$': '<rootDir>/__mocks__/@react-navigation/bottom-tabs.tsx',

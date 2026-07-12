@@ -27,11 +27,21 @@ describe('RootNavigator', () => {
   it('should render the Mapa tab as the initial route', async () => {
     await renderNavigator('Mapa');
     expect(screen.getByTestId('discovery-screen')).toBeOnTheScreen();
+    expect(screen.getByTestId('tab-icon-Mapa')).toBeOnTheScreen();
+    expect(screen.getByTestId('ionicon-map')).toBeOnTheScreen();
   });
 
   it('should mount the ParquesStackNavigator (parks list) when Parques tab is selected', async () => {
     await renderNavigator('Parques');
     expect(screen.getByTestId('parks-list-screen')).toBeOnTheScreen();
+    expect(screen.getByTestId('tab-icon-Parques')).toBeOnTheScreen();
+    expect(screen.getByTestId('ionicon-business')).toBeOnTheScreen();
+  });
+
+  it('should render the Usuario tab icon when Usuario is selected', async () => {
+    await renderNavigator('Usuario');
+    expect(screen.getByTestId('tab-icon-Usuario')).toBeOnTheScreen();
+    expect(screen.getByTestId('ionicon-person')).toBeOnTheScreen();
   });
 
   it('should render fallback view for unknown route', async () => {
