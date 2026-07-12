@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Switch, FlatList, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
@@ -8,25 +9,40 @@ import { ProfileSkeleton } from '../../components/Skeleton';
 import type { UserProfile } from '../../data/models/UserProfile';
 import type { FavoritePark } from '../../data/models/FavoritePark';
 import type { ThemeColors } from '../../theme/colors';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { RootTabParamList } from '../../navigation/RootNavigator';
+
+const ONBOARDING_KEY = 'opencoaster:hasSeenOnboarding';
+
+type ProfileNavProp = BottomTabNavigationProp<RootTabParamList>;
 
 export function ProfileScreen(): React.JSX.Element {
-  const { colors } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const provider = useParkDiscoveryProvider();
-  const { favorites } = useFavorites();
-  const navigation = useNavigation();
+  const { favorites, clearFavorites } = useFavorites();
+  const navigation = useNavigation<ProfileNavProp>();
 
   useEffect(() => {
     provider.getUserProfile().then(setProfile);
   }, [provider]);
 
-  const handleFavoritePress = (item: FavoritePark) => {
-    (navigation.navigate as unknown as (name: string, params: unknown) => void)('Parques', {
-      screen: 'ParkDetail',
-      params: { parkId: item.parkId },
-    });
-  };
+  const handleFavoritePress = useCallback(
+    (item: FavoritePark) => {
+      navigation.navigate('Parques', {
+        screen: 'ParkDetail',
+        params: { parkId: item.parkId },
+      });
+    },
+    [navigation],
+  );
+
+  const handleLogout = useCallback(async () => {
+    await clearFavorites();
+    await AsyncStorage.removeItem(ONBOARDING_KEY);
+    navigation.reset({ index: 0, routes: [{ name: 'Mapa' }] });
+  }, [clearFavorites, navigation]);
 
   if (!profile) {
     return (
@@ -39,15 +55,9 @@ export function ProfileScreen(): React.JSX.Element {
   return (
     <View testID="profile-screen" style={styles.container}>
       <View testID="profile-avatar" style={styles.avatarContainer}>
-        {profile.avatarUrl ? (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitial}>{profile.username.charAt(0).toUpperCase()}</Text>
-          </View>
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitial}>{profile.username.charAt(0).toUpperCase()}</Text>
-          </View>
-        )}
+        <View style={styles.avatarPlaceholder}>
+          <Text style={styles.avatarInitial}>{profile.username.charAt(0).toUpperCase()}</Text>
+        </View>
       </View>
 
       <Text testID="profile-username" style={styles.username}>
@@ -86,7 +96,29 @@ export function ProfileScreen(): React.JSX.Element {
         )}
       </View>
 
-      <TouchableOpacity testID="logout-button" style={styles.logoutButton} onPress={() => {}}>
+      {/* Settings / Preferences section */}
+      <View style={styles.settingsSection}>
+        <Text style={styles.settingsTitle}>Preferencias</Text>
+
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Modo oscuro</Text>
+          <Switch
+            testID="dark-mode-toggle"
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: colors.textTertiary, true: colors.accent }}
+          />
+        </View>
+
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Idioma</Text>
+          <Text testID="setting-language-value" style={styles.settingValue}>
+            Español
+          </Text>
+        </View>
+      </View>
+
+      <TouchableOpacity testID="logout-button" style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Cerrar sesión</Text>
       </TouchableOpacity>
     </View>
@@ -173,6 +205,35 @@ function createStyles(colors: ThemeColors) {
     favoriteParkName: {
       fontSize: 16,
       color: colors.accent,
+    },
+    settingsSection: {
+      width: '100%',
+      marginTop: 24,
+      paddingHorizontal: 16,
+    },
+    settingsTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    settingRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      marginBottom: 8,
+    },
+    settingLabel: {
+      fontSize: 16,
+      color: colors.text,
+    },
+    settingValue: {
+      fontSize: 14,
+      color: colors.textSecondary,
     },
     logoutButton: {
       width: '100%',

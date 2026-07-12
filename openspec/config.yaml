@@ -6,7 +6,7 @@ project:
   persistence: hybrid
 
 workflow:
-  execution_mode: interactive
+  execution_mode: auto
   chained_pr_strategy: auto-forecast
   review_budget_lines: 800
 
@@ -22,12 +22,12 @@ context: |
 
 testing:
   strict_tdd: true
-  source: detected from runner existence (Jest configured with 70 tests passing)
-  detected: 2026-07-10
+  source: detected from runner existence (Jest configured with 128 tests, 127 passing)
+  detected: 2026-07-12
   runner:
     available: true
     framework: Jest + jest-expo + @testing-library/react-native
-    rationale: Jest with ts-jest and jest-expo preset for Expo native mocking compatibility.
+    rationale: Jest with ts-jest and jest-expo preset for Expo native mocking compatibility. 128 tests (127 passing, 1 known failure in ParksListScreen debounce).
     commands:
       test: npx jest --passWithNoTests
       watch: npx jest --watch
@@ -40,17 +40,17 @@ testing:
       available: true
       tool: '@testing-library/react-native'
     e2e:
-      available: false
-      tool: '—'
+      available: true
+      tool: Maestro (3 flows: launch, park-detail, search)
   quality:
     linter:
-      available: false
+      available: true
       command: npx eslint .
     type_checker:
       available: true
       command: npx tsc --noEmit
     formatter:
-      available: false
+      available: true
       command: npx prettier . --check
 
 rules:
@@ -90,8 +90,9 @@ adoption_notes:
     - sdd.spec_path=./specs
     - sdd.design_path=./design
     - sdd.review_budget_lines=400
-  init_updated: 2026-07-10
+  init_updated: 2026-07-12
   changes:
     - testing.*.available: false → true for unit, integration, type_checker
     - context: updated from planned-only to reflect actual codebase state
     - detected date: 2026-07-07 → 2026-07-10
+    - 2026-07-12: e2e.available → true (Maestro flows exist), linter/formatter → true, execution_mode → auto, test count → 128

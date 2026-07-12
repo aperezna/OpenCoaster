@@ -9,6 +9,7 @@ interface UseFavoritesReturn {
   favorites: FavoritePark[];
   isFavorite: (parkId: string) => boolean;
   toggleFavorite: (parkId: string, parkName: string) => void;
+  clearFavorites: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -75,5 +76,10 @@ export function useFavorites(
     [adapter],
   );
 
-  return { favorites, isFavorite, toggleFavorite, isLoading };
+  const clearFavorites = useCallback(async () => {
+    setFavorites([]);
+    await adapter.setItem(FAVORITES_KEY, JSON.stringify([]));
+  }, [adapter]);
+
+  return { favorites, isFavorite, toggleFavorite, clearFavorites, isLoading };
 }

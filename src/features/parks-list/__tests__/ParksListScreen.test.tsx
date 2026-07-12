@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react-native';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react-native';
 import { ParksListScreen } from '../ParksListScreen';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
 import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscoveryProviderContext';
@@ -102,6 +102,7 @@ describe('ParksListScreen', () => {
   // --- Search filtering ---
 
   it('should debounce search input and filter parks by name', async () => {
+    jest.useFakeTimers();
     renderScreen();
 
     await waitFor(() => {
@@ -111,6 +112,14 @@ describe('ParksListScreen', () => {
 
     const searchInput = screen.getByTestId('park-search-input');
     fireEvent.changeText(searchInput, 'Magic');
+
+    // Advance past the 300ms debounce
+    act(() => {
+      jest.advanceTimersByTime(350);
+    });
+
+    // Use real timers for the async query resolution
+    jest.useRealTimers();
 
     await waitFor(
       () => {

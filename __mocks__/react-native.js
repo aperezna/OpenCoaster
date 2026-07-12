@@ -120,6 +120,7 @@ module.exports = {
   SafeAreaView: mockElement('SafeAreaView'),
   Modal: mockElement('Modal'),
   Pressable: mockElement('Pressable'),
+  Switch: mockElement('Switch'),
   RefreshControl: mockElement('RefreshControl'),
   VirtualizedList: mockElement('VirtualizedList'),
   Alert: {
