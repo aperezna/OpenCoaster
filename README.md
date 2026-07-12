@@ -2,23 +2,23 @@
 
 [![CI](https://github.com/aperezna/OpenCoaster/actions/workflows/ci.yml/badge.svg)](https://github.com/aperezna/OpenCoaster/actions/workflows/ci.yml)
 
-Descubrí parques de diversiones y sus atracciones desde tu celular.
+Descubre parques de atracciones y sus atracciones desde tu móvil.
 
-OpenCoaster es una app mobile hecha con **React Native + Expo** que te permite explorar parques temáticos, ver sus detalles, horarios, clima, y atracciones — todo desde un mapa interactivo.
+OpenCoaster es una app móvil hecha con **React Native + Expo** que te permite explorar parques temáticos, ver sus detalles, horarios, clima y atracciones — todo desde un mapa interactivo.
 
 ## ✨ Funcionalidades
 
-- **Mapa interactivo** — navegá por el mapa para descubrir parques cercanos con clustering de marcadores (Leaflet + OpenStreetMap)
-- **Búsqueda con debounce** — buscá parques por nombre con filtro en tiempo real
-- **Favoritos** — guardá tus parques favoritos y accedé desde el perfil
-- **Detalle del parque** — horarios, clima actual, atracciones, y fotos
-- **Pull-to-refresh** — actualizá datos deslizando hacia abajo
-- **Loading skeletons** — esqueletos animados por card mientras carga
-- **Dark mode** — modo oscuro automático que sigue al sistema
+- **Mapa interactivo** — navega por el mapa para descubrir parques cercanos con agrupación de marcadores (Leaflet + OpenStreetMap)
+- **Búsqueda con debounce** — busca parques por nombre con filtro en tiempo real
+- **Favoritos** — guarda tus parques favoritos y accede desde el perfil
+- **Detalle del parque** — horarios, clima actual, atracciones y fotos
+- **Pull-to-refresh** — actualiza los datos deslizando hacia abajo
+- **Loading skeletons** — esqueletos animados por tarjeta mientras carga
+- **Dark mode** — modo oscuro automático que sigue la configuración del sistema
 - **Offline-first** — caché persistente con AsyncStorage + TanStack Query (24h)
 - **Onboarding** — carrusel de bienvenida en el primer inicio
 - **Crash reporting** — Sentry captura errores en producción
-- **Geolocalización** — obtené parques cercanos a tu ubicación
+- **Geolocalización** — obtén parques cercanos a tu ubicación
 
 ## 🛠 Stack
 
@@ -58,7 +58,7 @@ npx expo start --ios
 
 ### Configurar entorno
 
-Copiá `.env.example` a `.env` y agregá el DSN de Sentry si querés crash reporting:
+Copia `.env.example` a `.env` y añade el DSN de Sentry si quieres crash reporting:
 
 ```bash
 cp .env.example .env
@@ -68,7 +68,7 @@ cp .env.example .env
 ## 🧪 Tests
 
 ```bash
-# Tests unitarios (127 tests, 23 suites)
+# Tests unitarios (127 tests, 23 suites de test)
 npm test
 
 # Modo watch
@@ -91,7 +91,7 @@ npm run format
 
 ```bash
 # Requiere: JDK 11+, Android emulator, Maestro CLI instalado
-# Buildear APK e instalar en emulador, luego:
+# Compilar APK e instalar en el emulador, luego:
 maestro test .maestro/flows/
 ```
 
