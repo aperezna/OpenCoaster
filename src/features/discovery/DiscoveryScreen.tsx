@@ -7,6 +7,7 @@ import { DEFAULT_REGION } from '../../config/constants';
 import { useSearchParks } from './useSearchParks';
 import { ExpoLocationService } from '../../data/location/ExpoLocationService';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
+import ErrorState from '../../components/ErrorState';
 import type { NavigationProp } from '@react-navigation/native';
 import type { LocationService, Coords } from '../../data/location/LocationService';
 import type { ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
@@ -94,7 +95,7 @@ export function DiscoveryScreen({
       });
   }, [locationService]);
 
-  const { parks } = useSearchParks(searchQuery, provider);
+  const { parks, error, refetch } = useSearchParks(searchQuery, provider);
 
   const handleNameChange = useCallback((text: string) => {
     setSearchQuery((prev) => ({ ...prev, name: text }));
@@ -177,6 +178,16 @@ export function DiscoveryScreen({
           <Text style={styles.emptyText}>No parks found</Text>
         </View>
       )}
+
+      {error && (
+        <View testID="discovery-error-overlay" style={styles.errorOverlay}>
+          <ErrorState
+            message="No se pudieron cargar los parques. Verifica tu conexión."
+            onRetry={() => refetch()}
+            testID="discovery-error"
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -244,6 +255,13 @@ function createStyles(colors: ThemeColors) {
       color: colors.textTertiary,
       padding: 16,
       textAlign: 'center',
+    },
+    errorOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      zIndex: 100,
     },
   });
 }
