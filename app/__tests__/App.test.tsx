@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import App from '../../App';
+import { SyncPromise } from '../../test-utils/syncThenable';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -14,6 +15,15 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   removeItem: jest.fn(() => Promise.resolve()),
 }));
 
+// Replace PersistQueryClientProvider with a plain QueryClientProvider
+// to eliminate act warnings from its async persistence internals.
+jest.mock('@tanstack/react-query-persist-client', () => {
+  const actual = jest.requireActual('@tanstack/react-query');
+  return {
+    PersistQueryClientProvider: actual.QueryClientProvider,
+  };
+});
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -23,30 +33,26 @@ describe('App — Onboarding', () => {
     jest.clearAllMocks();
   });
 
-  it('should render main app (discovery) when onboarding has been seen', async () => {
-    mockGetItem.mockResolvedValue('true');
+  it('should render main app (discovery) when onboarding has been seen', () => {
+    mockGetItem.mockImplementation(() => SyncPromise.resolve('true') as any);
 
-    await render(<App />);
+    render(<App />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId('discovery-screen')).toBeTruthy();
-    });
+    expect(screen.getByTestId('discovery-screen')).toBeTruthy();
   });
 
-  it('should show onboarding carousel when user has not seen it', async () => {
-    mockGetItem.mockResolvedValue(null);
+  it('should show onboarding carousel when user has not seen it', () => {
+    mockGetItem.mockImplementation(() => SyncPromise.resolve(null) as any);
 
-    await render(<App />);
+    render(<App />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId('onboarding-carousel')).toBeTruthy();
-    });
+    expect(screen.getByTestId('onboarding-carousel')).toBeTruthy();
   });
 
-  it('should show loading state while checking onboarding status', async () => {
+  it('should show loading state while checking onboarding status', () => {
     mockGetItem.mockReturnValue(new Promise(() => {}));
 
-    await render(<App />);
+    render(<App />);
 
     expect(screen.getByTestId('app-loading')).toBeTruthy();
   });

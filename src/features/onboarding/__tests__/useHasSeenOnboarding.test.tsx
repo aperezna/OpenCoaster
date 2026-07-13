@@ -1,5 +1,6 @@
-import { renderHook, act } from '@testing-library/react-native';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useHasSeenOnboarding } from '../useHasSeenOnboarding';
+import { SyncPromise } from '../../../../test-utils/syncThenable';
 
 // ---------------------------------------------------------------------------
 // In-memory storage mock
@@ -12,12 +13,16 @@ function createMockStorage(initialValue?: string | null) {
   }
 
   return {
-    getItem: jest.fn(async (key: string) => store[key] ?? null),
-    setItem: jest.fn(async (key: string, value: string) => {
+    getItem: jest.fn(
+      (key: string) => SyncPromise.resolve(store[key] ?? null) as unknown as Promise<string | null>,
+    ),
+    setItem: jest.fn((key: string, value: string) => {
       store[key] = value;
+      return SyncPromise.resolve(undefined) as unknown as Promise<void>;
     }),
-    removeItem: jest.fn(async (key: string) => {
+    removeItem: jest.fn((key: string) => {
       delete store[key];
+      return SyncPromise.resolve(undefined) as unknown as Promise<void>;
     }),
   };
 }
@@ -29,6 +34,10 @@ function createMockStorage(initialValue?: string | null) {
 describe('useHasSeenOnboarding', () => {
   it('should start in loading state', () => {
     const storage = createMockStorage();
+    // Override getItem to return a promise that never settles,
+    // so the initial 'loading' state is preserved on render.
+    storage.getItem = jest.fn().mockReturnValue(new Promise<string | null>(() => {}));
+
     const { result } = renderHook(() => useHasSeenOnboarding(storage));
 
     expect(result.current.status).toBe('loading');
@@ -38,8 +47,9 @@ describe('useHasSeenOnboarding', () => {
     const storage = createMockStorage();
     const { result } = renderHook(() => useHasSeenOnboarding(storage));
 
-    await act(async () => {});
-    await act(async () => {});
+    await waitFor(() => {
+      expect(result.current.status).not.toBe('loading');
+    });
 
     expect(result.current.status).toBe('unseen');
   });
@@ -48,8 +58,9 @@ describe('useHasSeenOnboarding', () => {
     const storage = createMockStorage('true');
     const { result } = renderHook(() => useHasSeenOnboarding(storage));
 
-    await act(async () => {});
-    await act(async () => {});
+    await waitFor(() => {
+      expect(result.current.status).not.toBe('loading');
+    });
 
     expect(result.current.status).toBe('seen');
   });
@@ -58,8 +69,9 @@ describe('useHasSeenOnboarding', () => {
     const storage = createMockStorage('not-a-boolean');
     const { result } = renderHook(() => useHasSeenOnboarding(storage));
 
-    await act(async () => {});
-    await act(async () => {});
+    await waitFor(() => {
+      expect(result.current.status).not.toBe('loading');
+    });
 
     expect(result.current.status).toBe('unseen');
   });
@@ -68,8 +80,9 @@ describe('useHasSeenOnboarding', () => {
     const storage = createMockStorage();
     const { result } = renderHook(() => useHasSeenOnboarding(storage));
 
-    await act(async () => {});
-    await act(async () => {});
+    await waitFor(() => {
+      expect(result.current.status).not.toBe('loading');
+    });
 
     await act(async () => {
       await result.current.completeOnboarding();
@@ -85,8 +98,9 @@ describe('useHasSeenOnboarding', () => {
 
     const { result } = renderHook(() => useHasSeenOnboarding(storage));
 
-    await act(async () => {});
-    await act(async () => {});
+    await waitFor(() => {
+      expect(result.current.status).not.toBe('loading');
+    });
 
     expect(result.current.status).toBe('unseen');
   });

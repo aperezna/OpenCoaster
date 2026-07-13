@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DiscoveryScreen } from '../DiscoveryScreen';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
@@ -37,28 +37,37 @@ function renderScreen(options: RenderOptions = {}) {
 }
 
 describe('DiscoveryScreen', () => {
+  /** Render and flush cascading effects (userCoords → setSearchQuery, Query promises) */
+  async function renderAndFlush(options?: RenderOptions) {
+    renderScreen(options);
+    // Flush TanStack Query microtasks then React's cascading effects
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+  }
+
   it('should render the map view', async () => {
-    await renderScreen();
+    await renderAndFlush();
     expect(screen.getByTestId('discovery-map')).toBeTruthy();
   });
 
   it('should render the floating search bar', async () => {
-    await renderScreen();
+    await renderAndFlush();
     expect(screen.getByTestId('search-bar')).toBeTruthy();
     expect(screen.getByTestId('search-name-input')).toBeTruthy();
     expect(screen.getByPlaceholderText('Buscar parques...')).toBeTruthy();
   });
 
   it('should show search results dropdown when typing', async () => {
-    await renderScreen();
-
-    // Wait for parks data to load
-    await waitFor(() => {
-      expect(screen.getByTestId('discovery-map')).toBeTruthy();
-    });
+    await renderAndFlush();
 
     // Type in search — Magic Kingdom is near the fake location (28.4, -81.6)
-    fireEvent.changeText(screen.getByTestId('search-name-input'), 'Magic');
+    act(() => {
+      fireEvent.changeText(screen.getByTestId('search-name-input'), 'Magic');
+    });
 
     await waitFor(() => {
       expect(screen.getByTestId('search-result-magic-kingdom')).toBeTruthy();
@@ -66,12 +75,11 @@ describe('DiscoveryScreen', () => {
   });
 
   it('should show no parks message when search matches nothing', async () => {
-    await renderScreen();
-    await waitFor(() => {
-      expect(screen.getByTestId('discovery-map')).toBeTruthy();
-    });
+    await renderAndFlush();
 
-    fireEvent.changeText(screen.getByTestId('search-name-input'), 'NonExistentPark');
+    act(() => {
+      fireEvent.changeText(screen.getByTestId('search-name-input'), 'NonExistentPark');
+    });
 
     await waitFor(() => {
       expect(screen.getByText('No parks found')).toBeTruthy();
@@ -79,36 +87,28 @@ describe('DiscoveryScreen', () => {
   });
 
   it('should handle location permission denied gracefully', async () => {
-    await renderScreen({
+    await renderAndFlush({
       locationService: new FakeLocationService('denied'),
     });
     // Map should still render, no crash
     expect(screen.getByTestId('discovery-map')).toBeTruthy();
-    // Parks should still load (search works without location)
-    await waitFor(() => {
-      expect(screen.getByTestId('discovery-map')).toBeTruthy();
-    });
   });
 
   it('should handle location permission error gracefully', async () => {
-    await renderScreen({
+    await renderAndFlush({
       locationService: new FakeLocationService('error'),
     });
     // Map should still render, no crash
     expect(screen.getByTestId('discovery-map')).toBeTruthy();
-    await waitFor(() => {
-      expect(screen.getByTestId('discovery-map')).toBeTruthy();
-    });
   });
 
   it('should call onParkSelect when a park is selected from search results', async () => {
     const onParkSelect = jest.fn();
-    await renderScreen({ onParkSelect });
-    await waitFor(() => {
-      expect(screen.getByTestId('discovery-map')).toBeTruthy();
-    });
+    await renderAndFlush({ onParkSelect });
 
-    fireEvent.changeText(screen.getByTestId('search-name-input'), 'Magic');
+    act(() => {
+      fireEvent.changeText(screen.getByTestId('search-name-input'), 'Magic');
+    });
 
     await waitFor(() => {
       expect(screen.getByTestId('search-result-magic-kingdom')).toBeTruthy();

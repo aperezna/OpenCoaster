@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSearchParks } from '../discovery/useSearchParks';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
+import type { ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
 import { ParkResultList } from '../discovery/ParkResultList';
 import { ParksListSkeleton } from '../../components/Skeleton';
 import ErrorState from '../../components/ErrorState';
@@ -19,22 +20,25 @@ export function ParksListScreen(): React.JSX.Element {
 
   // Search state with debounce
   const [searchText, setSearchText] = useState('');
-  const [debouncedText, setDebouncedText] = useState('');
+  const [cityText, setCityText] = useState('');
+  const [countryText, setCountryText] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState<ParkSearchQuery>({});
 
   // Track whether data has ever been loaded — prevents skeleton on re-fetch
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedText(searchText);
+      const q: ParkSearchQuery = {};
+      if (searchText) q.name = searchText;
+      if (cityText) q.city = cityText;
+      if (countryText) q.country = countryText;
+      setDebouncedQuery(q);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchText]);
+  }, [searchText, cityText, countryText]);
 
-  const { parks, isLoading, isFetching, error, refetch } = useSearchParks(
-    debouncedText ? { name: debouncedText } : {},
-    provider,
-  );
+  const { parks, isLoading, isFetching, error, refetch } = useSearchParks(debouncedQuery, provider);
 
   useEffect(() => {
     if (parks && !hasLoadedOnce) {
@@ -71,6 +75,20 @@ export function ParksListScreen(): React.JSX.Element {
           value={searchText}
           onChangeText={setSearchText}
         />
+        <TextInput
+          testID="park-city-input"
+          style={styles.searchInput}
+          placeholder="Ciudad..."
+          value={cityText}
+          onChangeText={setCityText}
+        />
+        <TextInput
+          testID="park-country-input"
+          style={styles.searchInput}
+          placeholder="País..."
+          value={countryText}
+          onChangeText={setCountryText}
+        />
         <ErrorState
           message="No se pudieron cargar los parques. Revisá tu conexión."
           onRetry={handleRefresh}
@@ -87,6 +105,20 @@ export function ParksListScreen(): React.JSX.Element {
         placeholder="Buscar parques..."
         value={searchText}
         onChangeText={setSearchText}
+      />
+      <TextInput
+        testID="park-city-input"
+        style={styles.searchInput}
+        placeholder="Ciudad..."
+        value={cityText}
+        onChangeText={setCityText}
+      />
+      <TextInput
+        testID="park-country-input"
+        style={styles.searchInput}
+        placeholder="País..."
+        value={countryText}
+        onChangeText={setCountryText}
       />
       <ParkResultList
         parks={parks ?? []}

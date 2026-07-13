@@ -1,6 +1,7 @@
-import { renderHook, act } from '@testing-library/react-native';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useFavorites } from '../useFavorites';
 import type { StorageAdapter } from '../../../data/cache/storageAdapter';
+import { SyncPromise } from '../../../../test-utils/syncThenable';
 
 // ---------------------------------------------------------------------------
 // In-memory adapter for testing
@@ -13,12 +14,15 @@ function createInMemoryAdapter(initialData?: string): StorageAdapter {
   }
 
   return {
-    getItem: async (key: string) => store[key] ?? null,
-    setItem: async (key: string, value: string) => {
+    getItem: (key: string) =>
+      SyncPromise.resolve(store[key] ?? null) as unknown as Promise<string | null>,
+    setItem: (key: string, value: string) => {
       store[key] = value;
+      return SyncPromise.resolve(undefined) as unknown as Promise<void>;
     },
-    removeItem: async (key: string) => {
+    removeItem: (key: string) => {
       delete store[key];
+      return SyncPromise.resolve(undefined) as unknown as Promise<void>;
     },
   };
 }
@@ -33,12 +37,11 @@ describe('useFavorites', () => {
       const adapter = createInMemoryAdapter();
       const { result } = renderHook(() => useFavorites(adapter));
 
-      // Wait for the async load to complete
-      await act(async () => {});
-      await act(async () => {});
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       expect(result.current.favorites).toEqual([]);
-      expect(result.current.isLoading).toBe(false);
     });
 
     it('should load stored favorites on mount', async () => {
@@ -50,8 +53,9 @@ describe('useFavorites', () => {
       const adapter = createInMemoryAdapter(stored);
       const { result } = renderHook(() => useFavorites(adapter));
 
-      await act(async () => {});
-      await act(async () => {});
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       expect(result.current.favorites).toHaveLength(3);
       expect(result.current.favorites[0].parkId).toBe('p1');
@@ -63,11 +67,11 @@ describe('useFavorites', () => {
       const adapter = createInMemoryAdapter('not-valid-json');
       const { result } = renderHook(() => useFavorites(adapter));
 
-      await act(async () => {});
-      await act(async () => {});
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       expect(result.current.favorites).toEqual([]);
-      expect(result.current.isLoading).toBe(false);
     });
   });
 
@@ -83,7 +87,9 @@ describe('useFavorites', () => {
       const adapter = createInMemoryAdapter();
       const { result } = renderHook(() => useFavorites(adapter));
 
-      await act(async () => {});
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       act(() => {
         result.current.toggleFavorite('p1', 'Park One');
@@ -98,7 +104,9 @@ describe('useFavorites', () => {
       const adapter = createInMemoryAdapter();
       const { result } = renderHook(() => useFavorites(adapter));
 
-      await act(async () => {});
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       act(() => {
         result.current.toggleFavorite('p1', 'Park One');
@@ -114,7 +122,9 @@ describe('useFavorites', () => {
       const adapter = createInMemoryAdapter();
       const { result } = renderHook(() => useFavorites(adapter));
 
-      await act(async () => {});
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       act(() => {
         result.current.toggleFavorite('p1', 'Park One');
@@ -139,7 +149,10 @@ describe('useFavorites', () => {
       };
 
       const { result } = renderHook(() => useFavorites(adapter));
-      await act(async () => {});
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       act(() => {
         result.current.toggleFavorite('p1', 'Park One');
@@ -163,7 +176,10 @@ describe('useFavorites', () => {
       };
 
       const { result } = renderHook(() => useFavorites(adapter));
-      await act(async () => {});
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       act(() => {
         result.current.toggleFavorite('p1', 'Park One');
@@ -177,7 +193,9 @@ describe('useFavorites', () => {
       const adapter = createInMemoryAdapter();
       const { result } = renderHook(() => useFavorites(adapter));
 
-      await act(async () => {});
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       act(() => {
         result.current.toggleFavorite('p1', 'Park One');

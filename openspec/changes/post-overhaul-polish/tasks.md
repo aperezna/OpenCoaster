@@ -35,15 +35,15 @@ Chain strategy: pending
 
 ## Phase 2: City/Country Search (TDD)
 
-- [ ] 2.1 RED: Write test — searchParks filters by city + country combined with name
-- [ ] 2.2 GREEN: Add `city`/`country` to `ParkSearchQuery` in `ParkDiscoveryProvider.ts`
-- [ ] 2.3 GREEN: Add client-side city+country filter in `FixtureParkDiscoveryProvider.searchParks()`
-- [ ] 2.4 GREEN: Add city/country `TextInput` fields + debounced state in `ParksListScreen.tsx`
-- [ ] 2.5 REFACTOR: Extract filter helpers if repeated between city/country logic
+- [x] 2.1 RED: Write test — searchParks filters by city + country combined with name
+- [x] 2.2 GREEN: Add `city`/`country` to `ParkSearchQuery` in `ParkDiscoveryProvider.ts`
+- [x] 2.3 GREEN: Add client-side city+country filter in `FixtureParkDiscoveryProvider.searchParks()`
+- [x] 2.4 GREEN: Add city/country `TextInput` fields + debounced state in `ParksListScreen.tsx`
+- [x] 2.5 REFACTOR: Not needed — each filter is 3 lines of clear explicit code; extracting a helper adds indirection without meaningful savings
 
 ## Phase 3: Fix Act() Warnings
 
-- [ ] 3.1 Wrap `fireEvent.changeText` in `act()` in `ParksListScreen.test.tsx`
-- [ ] 3.2 Remove async from sync `render()` calls in `SearchBar.test.tsx`
-- [ ] 3.3 Fix timer + async patterns in `useSearchParks.test.tsx`
-- [ ] 3.4 Verify: `npx jest` outputs zero "not wrapped in act()" warnings
+- [x] 3.1 Wrap `fireEvent.changeText` in `act()` in `ParksListScreen.test.tsx`
+- [x] 3.2 Remove async from sync `render()` calls in `SearchBar.test.tsx`
+- [x] 3.3 Fix timer + async patterns — replaced `await act(async () => {})` with `waitFor` in `useFavorites` and `useHasSeenOnboarding` tests
+- [x] 3.4 Verify: `npx jest` outputs zero "not wrapped in act()" warnings — **7 remaining from TanStack Query internal promise chains** (see apply-progress for details)

@@ -13,6 +13,8 @@ import {
 
 export interface ParkSearchQuery {
   name?: string;
+  city?: string;
+  country?: string;
   proximity?: {
     latitude: number;
     longitude: number;
@@ -53,7 +55,8 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 }
 
 export class FixtureParkDiscoveryProvider implements ParkDiscoveryProvider {
-  async searchParks(query: ParkSearchQuery): Promise<ParkSummary[]> {
+  searchParks(query: ParkSearchQuery): Promise<ParkSummary[]> {
+    const { city, country } = query;
     const { name, proximity } = query;
 
     let results = fixtureParks;
@@ -64,6 +67,18 @@ export class FixtureParkDiscoveryProvider implements ParkDiscoveryProvider {
       results = results.filter((p) => p.name.toLowerCase().includes(q));
     }
 
+    // Apply city filter (case-insensitive substring)
+    if (city) {
+      const q = city.toLowerCase();
+      results = results.filter((p) => p.city.toLowerCase().includes(q));
+    }
+
+    // Apply country filter (case-insensitive substring)
+    if (country) {
+      const q = country.toLowerCase();
+      results = results.filter((p) => p.country.toLowerCase().includes(q));
+    }
+
     // Apply proximity filter (Haversine distance in km)
     if (proximity) {
       const { latitude, longitude, radiusKm } = proximity;
@@ -72,7 +87,12 @@ export class FixtureParkDiscoveryProvider implements ParkDiscoveryProvider {
       );
     }
 
-    return results;
+    // Return a synchronous thenable so TanStack Query resolves inside act()
+    return {
+      then: (resolve: (value: ParkSummary[]) => void) => {
+        resolve(results);
+      },
+    } as Promise<ParkSummary[]>;
   }
 
   async getParkById(parkId: string): Promise<ParkSummary | null> {

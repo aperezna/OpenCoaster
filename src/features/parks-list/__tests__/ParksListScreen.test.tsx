@@ -89,13 +89,129 @@ describe('ParksListScreen', () => {
     });
 
     const searchInput = screen.getByTestId('park-search-input');
-    fireEvent.changeText(searchInput, 'NonExistentParkXYZ');
+    act(() => {
+      fireEvent.changeText(searchInput, 'NonExistentParkXYZ');
+    });
 
     await waitFor(
       () => {
         expect(screen.getByTestId('park-result-list-empty')).toBeOnTheScreen();
       },
       { timeout: 500 },
+    );
+  });
+
+  // --- City input ---
+
+  it('should render city input field alongside name input', async () => {
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('park-search-input')).toBeOnTheScreen();
+    });
+
+    expect(screen.getByTestId('park-city-input')).toBeOnTheScreen();
+  });
+
+  it('should filter parks by city after debounce', async () => {
+    jest.useFakeTimers();
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+      expect(screen.getByText('Efteling')).toBeTruthy();
+    });
+
+    const cityInput = screen.getByTestId('park-city-input');
+    fireEvent.changeText(cityInput, 'Orlando');
+
+    act(() => {
+      jest.advanceTimersByTime(350);
+    });
+
+    jest.useRealTimers();
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+        expect(screen.queryByText('Efteling')).toBeNull();
+      },
+      { timeout: 2000, interval: 50 },
+    );
+  });
+
+  // --- Country input ---
+
+  it('should render country input field alongside name input', async () => {
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('park-search-input')).toBeOnTheScreen();
+    });
+
+    expect(screen.getByTestId('park-country-input')).toBeOnTheScreen();
+  });
+
+  it('should filter parks by country after debounce', async () => {
+    jest.useFakeTimers();
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+      expect(screen.getByText('Efteling')).toBeTruthy();
+    });
+
+    const countryInput = screen.getByTestId('park-country-input');
+    fireEvent.changeText(countryInput, 'NL');
+
+    act(() => {
+      jest.advanceTimersByTime(350);
+    });
+
+    jest.useRealTimers();
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Efteling')).toBeTruthy();
+        expect(screen.queryByText('Magic Kingdom')).toBeNull();
+      },
+      { timeout: 2000, interval: 50 },
+    );
+  });
+
+  // --- Combined name + city + country ---
+
+  it('should combine name + city + country filters', async () => {
+    jest.useFakeTimers();
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+      expect(screen.getByText('Disneyland Park')).toBeTruthy();
+    });
+
+    const nameInput = screen.getByTestId('park-search-input');
+    fireEvent.changeText(nameInput, 'Magic');
+
+    const cityInput = screen.getByTestId('park-city-input');
+    fireEvent.changeText(cityInput, 'Orlando');
+
+    const countryInput = screen.getByTestId('park-country-input');
+    fireEvent.changeText(countryInput, 'US');
+
+    act(() => {
+      jest.advanceTimersByTime(350);
+    });
+
+    jest.useRealTimers();
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+        expect(screen.queryByText('Disneyland Park')).toBeNull();
+        expect(screen.queryByText('Efteling')).toBeNull();
+      },
+      { timeout: 2000, interval: 50 },
     );
   });
 

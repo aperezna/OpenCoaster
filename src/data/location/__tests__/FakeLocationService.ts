@@ -1,4 +1,5 @@
 import type { LocationService, Coords, PermissionStatus } from '../LocationService';
+import { SyncPromise } from '../../../../test-utils/syncThenable';
 
 export type FakeOutcome = 'granted' | 'denied' | 'undetermined' | 'error';
 
@@ -11,20 +12,24 @@ export class FakeLocationService implements LocationService {
     this.coords = coords;
   }
 
-  async requestPermission(): Promise<PermissionStatus> {
+  requestPermission(): Promise<PermissionStatus> {
     if (this.outcome === 'error') {
-      throw new Error('Location permission error');
+      return SyncPromise.reject(
+        new Error('Location permission error'),
+      ) as unknown as Promise<never>;
     }
-    return this.outcome as PermissionStatus;
+    return SyncPromise.resolve(
+      this.outcome as PermissionStatus,
+    ) as unknown as Promise<PermissionStatus>;
   }
 
-  async getCurrentPosition(): Promise<Coords | null> {
+  getCurrentPosition(): Promise<Coords | null> {
     if (this.outcome === 'error') {
-      throw new Error('Location position error');
+      return SyncPromise.reject(new Error('Location position error')) as unknown as Promise<never>;
     }
     if (this.outcome === 'granted') {
-      return this.coords;
+      return SyncPromise.resolve(this.coords) as unknown as Promise<Coords | null>;
     }
-    return null;
+    return SyncPromise.resolve(null) as unknown as Promise<Coords | null>;
   }
 }
