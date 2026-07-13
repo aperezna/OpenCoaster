@@ -32,5 +32,6 @@ module.exports = {
     '^@react-navigation/native-stack$': '<rootDir>/__mocks__/@react-navigation/native-stack.tsx',
     '^@react-navigation/bottom-tabs$': '<rootDir>/__mocks__/@react-navigation/bottom-tabs.tsx',
     '^@sentry/react-native$': '<rootDir>/__mocks__/@sentry/react-native.ts',
+    '^expo-splash-screen$': '<rootDir>/__mocks__/expo-splash-screen.ts',
   },
 };
