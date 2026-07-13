@@ -281,6 +281,10 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
     };
     if (childrenRes.children) collect(childrenRes.children);
 
+    // Check park-level status — if the park itself is not OPERATING,
+    // all attractions are closed regardless of what the live data says.
+    const isParkOperating = liveRes.status === 'OPERATING';
+
     // Merge live data into each attraction
     return attractions.map((e) => {
       const live = liveMap.get(e.id);
@@ -288,8 +292,8 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
         id: e.id,
         name: e.name,
         parkId,
-        waitTime: live?.queue?.STANDBY?.waitTime ?? 0,
-        status: mapStatus(live?.status),
+        waitTime: isParkOperating ? (live?.queue?.STANDBY?.waitTime ?? 0) : 0,
+        status: isParkOperating ? mapStatus(live?.status) : 'closed',
         type: mapAttractionType(e.entityType),
       };
     });

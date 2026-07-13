@@ -168,6 +168,7 @@ const mockLiveData = {
   id: 'magic-kingdom',
   name: 'Magic Kingdom',
   entityType: 'PARK',
+  status: 'OPERATING',
   liveData: [
     {
       id: 'mk-space-mountain',
@@ -408,6 +409,41 @@ describe('ThemeParksWikiProvider — getParkAttractions', () => {
 
     expect(results).toHaveLength(3);
     // All should have default waitTime 0 and status 'closed' when no live data
+    expect(results.every((a) => a.waitTime === 0)).toBe(true);
+    expect(results.every((a) => a.status === 'closed')).toBe(true);
+  });
+
+  it('should return all attractions as closed when the park is not operating', async () => {
+    const closedParkResponse = {
+      id: 'magic-kingdom',
+      name: 'Magic Kingdom',
+      entityType: 'PARK',
+      status: 'CLOSED',
+      liveData: [
+        {
+          id: 'mk-space-mountain',
+          status: 'OPERATING',
+          queue: { STANDBY: { waitTime: 45 } },
+        },
+        {
+          id: 'mk-pirates',
+          status: 'OPERATING',
+          queue: { STANDBY: { waitTime: 20 } },
+        },
+      ],
+    };
+
+    global.fetch = buildFetchMock([
+      { url: '/entity/magic-kingdom/children', response: mockAttractionsChildren },
+      { url: '/entity/magic-kingdom/live', response: closedParkResponse },
+    ]);
+
+    const provider = createProvider();
+    const results = await provider.getParkAttractions('magic-kingdom');
+
+    expect(results).toHaveLength(3);
+    // Even though individual attractions report OPERATING with wait times,
+    // the park-level CLOSED status forces all to be closed.
     expect(results.every((a) => a.waitTime === 0)).toBe(true);
     expect(results.every((a) => a.status === 'closed')).toBe(true);
   });
