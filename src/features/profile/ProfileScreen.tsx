@@ -5,9 +5,11 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import { useFavorites } from '../favorites/useFavorites';
+import { useItineraries } from '../visit-planner/useItineraries';
 import { ProfileSkeleton } from '../../components/Skeleton';
 import type { UserProfile } from '../../data/models/UserProfile';
 import type { FavoritePark } from '../../data/models/FavoritePark';
+import type { Itinerary } from '../../data/models/Itinerary';
 import type { ThemeColors } from '../../theme/colors';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { RootTabParamList } from '../../navigation/RootNavigator';
@@ -22,6 +24,7 @@ export function ProfileScreen(): React.JSX.Element {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const provider = useParkDiscoveryProvider();
   const { favorites, clearFavorites } = useFavorites();
+  const { itineraries } = useItineraries();
   const navigation = useNavigation<ProfileNavProp>();
 
   useEffect(() => {
@@ -33,6 +36,16 @@ export function ProfileScreen(): React.JSX.Element {
       navigation.navigate('Parques', {
         screen: 'ParkDetail',
         params: { parkId: item.parkId },
+      });
+    },
+    [navigation],
+  );
+
+  const handleItineraryPress = useCallback(
+    (itinerary: Itinerary) => {
+      navigation.navigate('Parques', {
+        screen: 'ItineraryDetail',
+        params: { itineraryId: itinerary.id },
       });
     },
     [navigation],
@@ -90,6 +103,32 @@ export function ProfileScreen(): React.JSX.Element {
                 onPress={() => handleFavoritePress(item)}
               >
                 <Text style={styles.favoriteParkName}>{item.parkName}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+      </View>
+
+      {/* My Itineraries section */}
+      <View style={styles.itinerariesSection}>
+        <Text style={styles.itinerariesTitle}>My Itineraries</Text>
+        {itineraries.length === 0 ? (
+          <Text style={styles.emptyItineraries}>No itineraries yet</Text>
+        ) : (
+          <FlatList
+            data={itineraries}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                testID={`itinerary-item-${item.id}`}
+                style={styles.itineraryItem}
+                onPress={() => handleItineraryPress(item)}
+              >
+                <Text style={styles.itineraryParkName}>{item.parkName}</Text>
+                <Text style={styles.itineraryMeta}>
+                  {item.date ?? 'Date TBD'} · {item.items.length} attraction
+                  {item.items.length !== 1 ? 's' : ''}
+                </Text>
               </TouchableOpacity>
             )}
           />
@@ -234,6 +273,37 @@ function createStyles(colors: ThemeColors) {
     settingValue: {
       fontSize: 14,
       color: colors.textSecondary,
+    },
+    itinerariesSection: {
+      width: '100%',
+      marginTop: 24,
+      paddingHorizontal: 16,
+    },
+    itinerariesTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    emptyItineraries: {
+      fontSize: 14,
+      color: colors.textTertiary,
+      textAlign: 'center',
+      paddingVertical: 20,
+    },
+    itineraryItem: {
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    itineraryParkName: {
+      fontSize: 16,
+      color: colors.accent,
+    },
+    itineraryMeta: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 4,
     },
     logoutButton: {
       width: '100%',

@@ -35,6 +35,25 @@ jest.mock('../../favorites/useFavorites', () => ({
   }),
 }));
 
+// ---------------------------------------------------------------------------
+// useItineraries mock (for "My Itineraries" section)
+// ---------------------------------------------------------------------------
+
+let mockItineraries: Array<{
+  id: string;
+  parkId: string;
+  parkName: string;
+  date?: string;
+  items: Array<{ id: string; attractionId: string; name: string }>;
+}> = [];
+
+jest.mock('../../visit-planner/useItineraries', () => ({
+  useItineraries: () => ({
+    itineraries: mockItineraries,
+    isLoading: false,
+  }),
+}));
+
 const mockAsyncStorageRemoveItem = jest.fn();
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -179,5 +198,85 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Modo oscuro')).toBeTruthy();
     expect(screen.getByText('Idioma')).toBeTruthy();
     expect(screen.getByText('Español')).toBeTruthy();
+  });
+
+  // ----- My Itineraries -----
+
+  it('should show "No itineraries yet" when there are no itineraries', async () => {
+    mockItineraries = [];
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText('No itineraries yet')).toBeTruthy();
+    });
+    // Section title is visible
+    expect(screen.getByText('My Itineraries')).toBeTruthy();
+  });
+
+  it('should render itineraries with name, date, and attraction count', async () => {
+    mockItineraries = [
+      {
+        id: 'itin-1',
+        parkId: 'pk1',
+        parkName: 'Magic Kingdom',
+        date: '2025-06-15',
+        items: [
+          { id: 'i1', attractionId: 'a1', name: 'Space Mountain' },
+          { id: 'i2', attractionId: 'a2', name: 'Big Thunder' },
+        ],
+      },
+      {
+        id: 'itin-2',
+        parkId: 'pk2',
+        parkName: 'Epcot',
+        date: undefined,
+        items: [
+          { id: 'i3', attractionId: 'a3', name: 'Soarin' },
+          { id: 'i4', attractionId: 'a4', name: 'Test Track' },
+          { id: 'i5', attractionId: 'a5', name: 'Living with the Land' },
+        ],
+      },
+    ];
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText('My Itineraries')).toBeTruthy();
+    });
+
+    // Both park names visible
+    expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+    expect(screen.getByText('Epcot')).toBeTruthy();
+    // Date display — RTL renders meta as a single Text node, use regex matching
+    expect(screen.getByText(/2025-06-15/)).toBeTruthy();
+    expect(screen.getByText(/Date TBD/)).toBeTruthy();
+    // Attraction counts
+    expect(screen.getByText(/2 attractions/)).toBeTruthy();
+    expect(screen.getByText(/3 attractions/)).toBeTruthy();
+  });
+
+  it('should navigate to ItineraryDetail when an itinerary is tapped', async () => {
+    mockItineraries = [
+      {
+        id: 'itin-1',
+        parkId: 'pk1',
+        parkName: 'Magic Kingdom',
+        date: '2025-06-15',
+        items: [{ id: 'i1', attractionId: 'a1', name: 'Space Mountain' }],
+      },
+    ];
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('Magic Kingdom'));
+    expect(mockNavigate).toHaveBeenCalledWith('Parques', {
+      screen: 'ItineraryDetail',
+      params: { itineraryId: 'itin-1' },
+    });
   });
 });

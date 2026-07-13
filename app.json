@@ -33,7 +33,8 @@
           "locationWhenInUsePermission": "OpenCoaster needs your location to show nearby parks."
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

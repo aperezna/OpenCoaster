@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,15 @@ import {
   Linking,
   StyleSheet,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme/ThemeContext';
 import type { ThemeColors } from '../../theme/colors';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import { useParkDetail } from './useParkDetail';
 import { useFavorites } from '../favorites/useFavorites';
+import { useItineraries } from '../visit-planner/useItineraries';
+import { ItineraryPickerModal } from '../visit-planner/ItineraryPickerModal';
 import { WeatherCard } from './WeatherCard';
 import { HoursCard } from './HoursCard';
 import { AttractionList } from './AttractionList';
@@ -27,6 +30,7 @@ import {
 import ErrorState from '../../components/ErrorState';
 import type { RouteProp } from '@react-navigation/native';
 import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigator';
+import type { Attraction } from '../../data/models/Attraction';
 
 const DEFAULT_PARK_ID = '75ea578a-adc8-4116-a54d-dccb60765ef9'; // Magic Kingdom Park
 
@@ -34,9 +38,19 @@ export function ParkDetailScreen(): React.JSX.Element {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const route = useRoute<RouteProp<ParquesStackParamList, 'ParkDetail'>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<ParquesStackParamList, 'ParkDetail'>>();
   const parkId = route.params?.parkId ?? DEFAULT_PARK_ID;
   const provider = useParkDiscoveryProvider();
   const { isFavorite, toggleFavorite } = useFavorites();
+  const {
+    itineraries,
+    isLoading: _itinerariesLoading,
+    addAttraction,
+    isAttractionInItinerary,
+  } = useItineraries();
+
+  const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
 
   const {
     park,
@@ -63,6 +77,45 @@ export function ParkDetailScreen(): React.JSX.Element {
   const handleRefresh = useCallback(() => {
     refetchAll();
   }, [refetchAll]);
+
+  const handlePlanVisit = useCallback(() => {
+    navigation.navigate('VisitPlanner', { parkId, parkName: park?.name });
+  }, [navigation, parkId, park?.name]);
+
+  const handleAddToItinerary = useCallback(
+    (attraction: Attraction) => {
+      if (itineraries.length === 0) {
+        // No itineraries exist → navigate to create itinerary flow
+        navigation.navigate('VisitPlanner', { parkId, parkName: park?.name });
+      } else {
+        // Show picker modal
+        setSelectedAttraction(attraction);
+      }
+    },
+    [itineraries.length, navigation, parkId, park?.name],
+  );
+
+  const handlePickerSelect = useCallback(
+    (itinerary: { id: string }) => {
+      if (selectedAttraction) {
+        addAttraction(itinerary.id, {
+          id: selectedAttraction.id,
+          name: selectedAttraction.name,
+        });
+      }
+      setSelectedAttraction(null);
+    },
+    [selectedAttraction, addAttraction],
+  );
+
+  const handlePickerCreateNew = useCallback(() => {
+    setSelectedAttraction(null);
+    navigation.navigate('VisitPlanner', { parkId, parkName: park?.name });
+  }, [navigation, parkId, park?.name]);
+
+  const handlePickerClose = useCallback(() => {
+    setSelectedAttraction(null);
+  }, []);
 
   if (error && !park) {
     return (
@@ -140,6 +193,16 @@ export function ParkDetailScreen(): React.JSX.Element {
         >
           <Text style={styles.directionsText}>Cómo llegar</Text>
         </TouchableOpacity>
+
+        {/* Plan visit CTA */}
+        <TouchableOpacity
+          testID="plan-visit-button"
+          style={styles.planVisitButton}
+          onPress={handlePlanVisit}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.planVisitText}>Plan visit</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Weather + Hours cards row with individual loading */}
@@ -154,10 +217,23 @@ export function ParkDetailScreen(): React.JSX.Element {
 
       {/* Attractions with individual loading */}
       {attractions ? (
-        <AttractionList attractions={attractions} />
+        <AttractionList
+          attractions={attractions}
+          onAddToItinerary={handleAddToItinerary}
+          isAttractionAdded={isAttractionInItinerary}
+        />
       ) : isAttractionsLoading ? (
         <AttractionListSkeleton />
       ) : null}
+
+      {/* Itinerary picker modal */}
+      <ItineraryPickerModal
+        visible={selectedAttraction !== null}
+        itineraries={itineraries}
+        onSelect={handlePickerSelect}
+        onCreateNew={handlePickerCreateNew}
+        onClose={handlePickerClose}
+      />
     </ScrollView>
   );
 }
@@ -244,6 +320,19 @@ function createStyles(colors: ThemeColors) {
     directionsText: {
       fontSize: 16,
       fontWeight: '600',
+      color: '#fff',
+    },
+    planVisitButton: {
+      backgroundColor: colors.accent,
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      alignItems: 'center',
+      marginTop: 12,
+    },
+    planVisitText: {
+      fontSize: 16,
+      fontWeight: '700',
       color: '#fff',
     },
     cardsRow: {
