@@ -6,10 +6,12 @@ import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscov
 import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscoveryProviderContext';
 
 const mockUseRoute = jest.fn();
+const mockNavigate = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useRoute: () => mockUseRoute(),
+  useNavigation: () => ({ navigate: mockNavigate }),
 }));
 
 function createTestQueryClient() {
@@ -140,6 +142,89 @@ describe('ParkDetailScreen', () => {
     await waitFor(() => {
       expect(screen.getByText('Parque no encontrado.')).toBeTruthy();
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Itinerary integration tests
+// ---------------------------------------------------------------------------
+
+let mockUseItineraries = {
+  itineraries: [] as Array<{
+    id: string;
+    parkId: string;
+    parkName: string;
+    date?: string;
+    items: Array<{ id: string; attractionId: string; name: string; order: number }>;
+    createdAt: string;
+    updatedAt: string;
+  }>,
+  isLoading: false,
+  createItinerary: jest.fn(),
+  deleteItinerary: jest.fn(),
+  updateDate: jest.fn(),
+  addAttraction: jest.fn(),
+  removeAttraction: jest.fn(),
+  moveItemUp: jest.fn(),
+  moveItemDown: jest.fn(),
+  isAttractionInItinerary: (_id: string) => false,
+};
+
+jest.mock('../../visit-planner/useItineraries', () => ({
+  useItineraries: () => mockUseItineraries,
+}));
+
+describe('ParkDetailScreen — Plan Visit CTA', () => {
+  beforeEach(() => {
+    mockUseRoute.mockReturnValue({
+      key: 'Parques',
+      name: 'Parques',
+      params: { parkId: 'magic-kingdom' },
+    });
+    mockNavigate.mockClear();
+    mockUseItineraries = {
+      itineraries: [],
+      isLoading: false,
+      createItinerary: jest.fn(),
+      deleteItinerary: jest.fn(),
+      updateDate: jest.fn(),
+      addAttraction: jest.fn(),
+      removeAttraction: jest.fn(),
+      moveItemUp: jest.fn(),
+      moveItemDown: jest.fn(),
+      isAttractionInItinerary: () => false,
+    };
+  });
+
+  it('should render a "Plan visit" button', async () => {
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-visit-button')).toBeTruthy();
+    });
+  });
+
+  it('should navigate to VisitPlanner with parkId and parkName when "Plan visit" is pressed', async () => {
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('plan-visit-button')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId('plan-visit-button'));
+    expect(mockNavigate).toHaveBeenCalledWith('VisitPlanner', {
+      parkId: 'magic-kingdom',
+      parkName: 'Magic Kingdom',
+    });
+  });
+
+  it('should show "Add to itinerary" button on each attraction card', async () => {
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('attraction-list')).toBeTruthy();
+    });
+
+    // Each Magic Kingdom attraction should have an add-to-itinerary button
+    const addButtons = screen.getAllByTestId(/^add-to-itinerary-/);
+    expect(addButtons.length).toBeGreaterThan(0);
   });
 });
 

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Attraction } from '../../data/models/Attraction';
 import type { ThemeColors } from '../../theme/colors';
@@ -21,9 +21,15 @@ const statusColors: Record<string, string> = {
 
 interface AttractionListProps {
   attractions: Attraction[];
+  onAddToItinerary?: (attraction: Attraction) => void;
+  isAttractionAdded?: (attractionId: string) => boolean;
 }
 
-export function AttractionList({ attractions }: AttractionListProps): React.JSX.Element {
+export function AttractionList({
+  attractions,
+  onAddToItinerary,
+  isAttractionAdded,
+}: AttractionListProps): React.JSX.Element {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -42,26 +48,53 @@ export function AttractionList({ attractions }: AttractionListProps): React.JSX.
         data={attractions}
         keyExtractor={(item) => item.id}
         scrollEnabled={false}
-        renderItem={({ item }) => (
-          <View testID={`attraction-${item.id}`} style={styles.item}>
-            <View style={styles.itemLeft}>
-              <Text style={styles.attractionName}>{item.name}</Text>
-              <Text style={styles.attractionType}>{typeLabels[item.type] ?? item.type}</Text>
+        renderItem={({ item }) => {
+          const isAdded = isAttractionAdded?.(item.id) ?? false;
+          const showAdd = onAddToItinerary && !isAdded;
+
+          return (
+            <View testID={`attraction-${item.id}`} style={styles.item}>
+              <View style={styles.itemContent}>
+                <View style={styles.itemLeft}>
+                  <Text style={styles.attractionName}>{item.name}</Text>
+                  <Text style={styles.attractionType}>{typeLabels[item.type] ?? item.type}</Text>
+                </View>
+                <View style={styles.itemRight}>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      { backgroundColor: statusColors[item.status] ?? '#999' },
+                    ]}
+                  />
+                  <Text style={[styles.waitTime, item.waitTime > 30 && styles.waitTimeLong]}>
+                    {item.status === 'operating'
+                      ? `${item.waitTime} min`
+                      : item.status === 'closed'
+                        ? 'Cerrado'
+                        : 'Fuera de servicio'}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.itemActions}>
+                {isAdded && (
+                  <View testID={`added-indicator-${item.id}`} style={styles.addedBadge}>
+                    <Text style={styles.addedText}>Added</Text>
+                  </View>
+                )}
+                {showAdd && (
+                  <TouchableOpacity
+                    testID={`add-to-itinerary-${item.id}`}
+                    style={styles.addButton}
+                    onPress={() => onAddToItinerary(item)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.addButtonText}>+ Itinerary</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-            <View style={styles.itemRight}>
-              <View
-                style={[styles.statusDot, { backgroundColor: statusColors[item.status] ?? '#999' }]}
-              />
-              <Text style={[styles.waitTime, item.waitTime > 30 && styles.waitTimeLong]}>
-                {item.status === 'operating'
-                  ? `${item.waitTime} min`
-                  : item.status === 'closed'
-                    ? 'Cerrado'
-                    : 'Fuera de servicio'}
-              </Text>
-            </View>
-          </View>
-        )}
+          );
+        }}
       />
     </View>
   );
@@ -88,9 +121,6 @@ function createStyles(colors: ThemeColors) {
       color: colors.textSecondary,
     },
     item: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
       paddingVertical: 12,
       paddingHorizontal: 16,
       backgroundColor: colors.surface,
@@ -101,6 +131,11 @@ function createStyles(colors: ThemeColors) {
       shadowOpacity: 0.05,
       shadowRadius: 2,
       elevation: 1,
+    },
+    itemContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
     },
     itemLeft: {
       flex: 1,
@@ -132,6 +167,38 @@ function createStyles(colors: ThemeColors) {
     },
     waitTimeLong: {
       color: '#F44336',
+    },
+    itemActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: 8,
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    addButton: {
+      paddingVertical: 6,
+      paddingHorizontal: 14,
+      backgroundColor: colors.accent,
+      borderRadius: 6,
+    },
+    addButtonText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#fff',
+    },
+    addedBadge: {
+      paddingVertical: 6,
+      paddingHorizontal: 14,
+      backgroundColor: colors.surface,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    addedText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.accent,
     },
   });
 }
