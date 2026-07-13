@@ -1,14 +1,15 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import type { ParkWeather } from '../../data/models/ParkWeather';
 import type { ThemeColors } from '../../theme/colors';
 
-const conditionLabels: Record<string, string> = {
-  sunny: 'Soleado',
-  cloudy: 'Nublado',
-  storm: 'Tormenta',
-  rainy: 'Lluvioso',
+const conditionKeys: Record<string, string> = {
+  sunny: 'weather.sunny',
+  cloudy: 'weather.cloudy',
+  storm: 'weather.storm',
+  rainy: 'weather.rainy',
 };
 
 const conditionEmojis: Record<string, string> = {
@@ -24,19 +25,20 @@ interface WeatherCardProps {
 
 export function WeatherCard({ weather }: WeatherCardProps): React.JSX.Element {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const label = conditionLabels[weather.condition] ?? weather.condition;
+  const labelKey = conditionKeys[weather.condition] ?? weather.condition;
   const emoji = conditionEmojis[weather.condition] ?? '';
 
   return (
     <View testID="weather-card" style={styles.card}>
-      <Text style={styles.cardTitle}>Clima</Text>
+      <Text style={styles.cardTitle}>{t('weather.title')}</Text>
       <View style={styles.content}>
         <Text style={styles.emoji}>{emoji}</Text>
         <Text style={styles.temperature}>
           {weather.temperature}°{weather.unit}
         </Text>
-        <Text style={styles.condition}>{label}</Text>
+        <Text style={styles.condition}>{t(labelKey)}</Text>
       </View>
     </View>
   );

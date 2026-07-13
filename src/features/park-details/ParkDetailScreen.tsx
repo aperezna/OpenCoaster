@@ -7,8 +7,10 @@ import {
   RefreshControl,
   TouchableOpacity,
   Linking,
+  Share,
   StyleSheet,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../theme/ThemeContext';
@@ -36,6 +38,7 @@ const DEFAULT_PARK_ID = '75ea578a-adc8-4116-a54d-dccb60765ef9'; // Magic Kingdom
 
 export function ParkDetailScreen(): React.JSX.Element {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const route = useRoute<RouteProp<ParquesStackParamList, 'ParkDetail'>>();
   const navigation =
@@ -73,6 +76,25 @@ export function ParkDetailScreen(): React.JSX.Element {
       Linking.openURL(url);
     }
   }, [park]);
+
+  const handleShare = useCallback(() => {
+    if (!park) {
+      return;
+    }
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${park.latitude},${park.longitude}`;
+    const title =
+      park.city && park.country
+        ? t('parkDetail.shareTitle', {
+            parkName: park.name,
+            city: park.city,
+            country: park.country,
+          })
+        : t('parkDetail.shareTitleNoLocation', { parkName: park.name });
+    const message = `${title}\n\n${mapsUrl}`;
+    Share.share({ message }).catch(() => {
+      // User cancelled — noop
+    });
+  }, [park, t]);
 
   const handleRefresh = useCallback(() => {
     refetchAll();
@@ -120,10 +142,7 @@ export function ParkDetailScreen(): React.JSX.Element {
   if (error && !park) {
     return (
       <View testID="park-detail-screen" style={styles.container}>
-        <ErrorState
-          message="No se pudo cargar la información del parque."
-          onRetry={handleRefresh}
-        />
+        <ErrorState message={t('parkDetail.loadError')} onRetry={handleRefresh} />
       </View>
     );
   }
@@ -139,7 +158,7 @@ export function ParkDetailScreen(): React.JSX.Element {
   if (!park) {
     return (
       <View testID="park-detail-screen" style={styles.container}>
-        <ErrorState message="Parque no encontrado." />
+        <ErrorState message={t('parkDetail.notFound')} />
       </View>
     );
   }
@@ -156,7 +175,7 @@ export function ParkDetailScreen(): React.JSX.Element {
         <Image testID="park-photo" source={{ uri: park.photoUrl }} style={styles.photo} />
       ) : (
         <View testID="park-photo-placeholder" style={styles.photoPlaceholder}>
-          <Text style={styles.placeholderText}>No photo available</Text>
+          <Text style={styles.placeholderText}>{t('parkDetail.noPhoto')}</Text>
         </View>
       )}
 
@@ -164,18 +183,27 @@ export function ParkDetailScreen(): React.JSX.Element {
       <View style={styles.infoSection}>
         <View style={styles.titleRow}>
           <Text style={styles.name}>{park.name}</Text>
-          <TouchableOpacity
-            testID="favorite-toggle"
-            onPress={() => toggleFavorite(parkId, park.name)}
-            style={styles.favoriteButton}
-          >
-            <Text
-              testID={isFavorite(parkId) ? 'favorite-toggle-filled' : 'favorite-toggle-outline'}
-              style={styles.favoriteIcon}
+          <View style={styles.titleActions}>
+            <TouchableOpacity
+              testID="share-button"
+              onPress={handleShare}
+              style={styles.shareButton}
             >
-              {isFavorite(parkId) ? '⭐' : '☆'}
-            </Text>
-          </TouchableOpacity>
+              <Text style={styles.shareIcon}>↗</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="favorite-toggle"
+              onPress={() => toggleFavorite(parkId, park.name)}
+              style={styles.favoriteButton}
+            >
+              <Text
+                testID={isFavorite(parkId) ? 'favorite-toggle-filled' : 'favorite-toggle-outline'}
+                style={styles.favoriteIcon}
+              >
+                {isFavorite(parkId) ? '⭐' : '☆'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <Text style={styles.location}>
           {park.city}, {park.country}
@@ -191,7 +219,7 @@ export function ParkDetailScreen(): React.JSX.Element {
           style={styles.directionsButton}
           onPress={handleDirections}
         >
-          <Text style={styles.directionsText}>Cómo llegar</Text>
+          <Text style={styles.directionsText}>{t('parkDetail.directions')}</Text>
         </TouchableOpacity>
 
         {/* Plan visit CTA */}
@@ -201,7 +229,7 @@ export function ParkDetailScreen(): React.JSX.Element {
           onPress={handlePlanVisit}
           activeOpacity={0.7}
         >
-          <Text style={styles.planVisitText}>Plan visit</Text>
+          <Text style={styles.planVisitText}>{t('parkDetail.planVisit')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -287,9 +315,21 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 4,
       flex: 1,
     },
+    titleActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    shareButton: {
+      padding: 4,
+      marginRight: 4,
+    },
+    shareIcon: {
+      fontSize: 24,
+      color: colors.textSecondary,
+    },
     favoriteButton: {
       padding: 4,
-      marginLeft: 8,
+      marginLeft: 4,
     },
     favoriteIcon: {
       fontSize: 28,

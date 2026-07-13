@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import type { ParkHours } from '../../data/models/ParkHours';
 import type { ThemeColors } from '../../theme/colors';
@@ -35,15 +36,16 @@ function formatTime(iso: string): string {
 
 export function HoursCard({ hours }: HoursCardProps): React.JSX.Element {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View testID="hours-card" style={styles.card}>
-      <Text style={styles.cardTitle}>Horario</Text>
+      <Text style={styles.cardTitle}>{t('hours.title')}</Text>
       <View style={styles.content}>
-        <Text style={styles.label}>Apertura</Text>
+        <Text style={styles.label}>{t('hours.opening')}</Text>
         <Text style={styles.time}>{formatTime(hours.opening)}</Text>
-        <Text style={styles.label}>Cierre</Text>
+        <Text style={styles.label}>{t('hours.closing')}</Text>
         <Text style={styles.time}>{formatTime(hours.closing)}</Text>
       </View>
     </View>

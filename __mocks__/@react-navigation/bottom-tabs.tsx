@@ -20,9 +20,11 @@ type MockRoute = { key: string; name: string; params: Record<string, any> };
 type ScreenOptions =
   | {
       tabBarIcon?: (props: { focused: boolean; color: string; size: number }) => React.ReactNode;
+      tabBarLabel?: string;
     }
   | ((props: { route: MockRoute }) => {
       tabBarIcon?: (props: { focused: boolean; color: string; size: number }) => React.ReactNode;
+      tabBarLabel?: string;
     });
 
 export function createBottomTabNavigator() {
@@ -76,6 +78,13 @@ export function createBottomTabNavigator() {
       return React.createElement(
         View,
         { testID: 'tab-navigator' },
+        resolvedScreenOptions?.tabBarLabel
+          ? React.createElement(
+              Text,
+              { testID: `tab-label-${route.name}` },
+              resolvedScreenOptions.tabBarLabel,
+            )
+          : null,
         resolvedScreenOptions?.tabBarIcon
           ? React.createElement(
               View,

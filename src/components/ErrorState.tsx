@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../theme/ThemeContext';
 import type { ThemeColors } from '../theme/colors';
 
@@ -10,20 +11,21 @@ interface ErrorStateProps {
 }
 
 function ErrorState({
-  message = 'Algo salió mal. Intentalo de nuevo.',
+  message,
   onRetry,
   testID = 'error-state',
 }: ErrorStateProps): React.JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.container} testID={testID}>
       <Text style={styles.icon}>⚠️</Text>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={styles.message}>{message ?? t('common.error')}</Text>
       {onRetry && (
         <TouchableOpacity style={styles.retryButton} onPress={onRetry} testID={`${testID}-retry`}>
-          <Text style={styles.retryText}>Reintentar</Text>
+          <Text style={styles.retryText}>{t('common.retry')}</Text>
         </TouchableOpacity>
       )}
     </View>

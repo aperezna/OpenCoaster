@@ -93,7 +93,7 @@ describe('ItineraryPickerModal', () => {
     expect(handleCreateNew).toHaveBeenCalled();
   });
 
-  it('should have a close button label', () => {
+  it('should have a translated close button label', () => {
     const handleClose = jest.fn();
     render(
       <ItineraryPickerModal
@@ -105,6 +105,6 @@ describe('ItineraryPickerModal', () => {
       />,
     );
 
-    expect(screen.getByText('Cancel')).toBeTruthy();
+    expect(screen.getByText('common.cancel')).toBeTruthy();
   });
 });

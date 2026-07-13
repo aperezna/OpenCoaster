@@ -108,15 +108,14 @@ describe('VisitPlannerScreen', () => {
       expect(screen.getByText(/2026-07-15/)).toBeTruthy();
     });
 
-    it('should show "Date TBD" when itinerary has no date', () => {
+    it('should show translated dateTbd when itinerary has no date', () => {
       render(<VisitPlannerScreen />);
-      expect(screen.getByText(/Date TBD/)).toBeTruthy();
+      expect(screen.getByText(/visitPlanner\.dateTbd/)).toBeTruthy();
     });
 
-    it('should show items count for each itinerary', () => {
+    it('should show translated attractions count for each itinerary', () => {
       render(<VisitPlannerScreen />);
-      expect(screen.getByText(/2 attractions/)).toBeTruthy();
-      expect(screen.getByText(/0 attractions/)).toBeTruthy();
+      expect(screen.getAllByText(/visitPlanner\.attractionsCount/)).toHaveLength(2);
     });
 
     it('should navigate to ItineraryDetail on card press', () => {

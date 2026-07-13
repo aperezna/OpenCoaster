@@ -142,25 +142,25 @@ describe('ItineraryDetailScreen', () => {
       expect(screen.getByText(/2026-07-15/)).toBeTruthy();
     });
 
-    it('should show "Date TBD" when itinerary has no date', () => {
+    it('should show translated dateTbd when itinerary has no date', () => {
       seedItinerary({ date: undefined });
       render(<ItineraryDetailScreen />);
-      expect(screen.getByText(/Date TBD/)).toBeTruthy();
+      expect(screen.getByText(/visitPlanner\.dateTbd/)).toBeTruthy();
     });
 
-    it('should show items count', () => {
+    it('should show translated attractions count', () => {
       render(<ItineraryDetailScreen />);
-      expect(screen.getByText(/3 attractions/)).toBeTruthy();
+      expect(screen.getByText(/visitPlanner\.attractionsCount/)).toBeTruthy();
     });
 
-    it('should show not found state when itinerary does not exist', () => {
+    it('should show translated not found state when itinerary does not exist', () => {
       mockUseRoute.mockReturnValue({
         key: 'ItineraryDetail',
         name: 'ItineraryDetail',
         params: { itineraryId: 'nonexistent' },
       });
       render(<ItineraryDetailScreen />);
-      expect(screen.getByText('Itinerary not found.')).toBeTruthy();
+      expect(screen.getByText('itineraryDetail.notFound')).toBeTruthy();
     });
   });
 
@@ -177,9 +177,9 @@ describe('ItineraryDetailScreen', () => {
       expect(screen.getByText('15 min')).toBeTruthy();
     });
 
-    it('should show status for closed attractions', () => {
+    it('should show translated status for closed attractions', () => {
       render(<ItineraryDetailScreen />);
-      expect(screen.getByText('Closed')).toBeTruthy();
+      expect(screen.getByText('itineraryDetail.closed')).toBeTruthy();
     });
 
     it('should show dash for unknown attractions', () => {
@@ -227,15 +227,15 @@ describe('ItineraryDetailScreen', () => {
       expect(screen.getByTestId('delete-itinerary-button')).toBeOnTheScreen();
     });
 
-    it('should call Alert.alert when delete is pressed', () => {
+    it('should call Alert.alert with translated strings when delete is pressed', () => {
       render(<ItineraryDetailScreen />);
       fireEvent.press(screen.getByTestId('delete-itinerary-button'));
       expect(Alert.alert).toHaveBeenCalledWith(
-        'Delete Itinerary',
-        'Are you sure you want to delete this itinerary?',
+        'itineraryDetail.deleteTitle',
+        'itineraryDetail.deleteConfirm',
         expect.arrayContaining([
-          expect.objectContaining({ text: 'Cancel', style: 'cancel' }),
-          expect.objectContaining({ text: 'Delete', style: 'destructive' }),
+          expect.objectContaining({ text: 'common.cancel', style: 'cancel' }),
+          expect.objectContaining({ text: 'common.delete', style: 'destructive' }),
         ]),
       );
     });

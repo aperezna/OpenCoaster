@@ -215,6 +215,18 @@ describe('ParksListScreen', () => {
     );
   });
 
+  it('should render translated search placeholders', async () => {
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('park-search-input')).toBeOnTheScreen();
+    });
+
+    expect(screen.getByPlaceholderText('common.searchPlaceholder')).toBeTruthy();
+    expect(screen.getByPlaceholderText('parkList.city')).toBeTruthy();
+    expect(screen.getByPlaceholderText('parkList.country')).toBeTruthy();
+  });
+
   // --- Search filtering ---
 
   it('should debounce search input and filter parks by name', async () => {
@@ -259,5 +271,85 @@ describe('ParksListScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('ParkDetail', {
       parkId: 'magic-kingdom',
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Search history tests (ParksListScreen)
+// ---------------------------------------------------------------------------
+
+const mockUseSearchHistory = {
+  queries: [] as string[],
+  add: jest.fn(),
+  clear: jest.fn(),
+  isLoading: false,
+};
+
+jest.mock('../../discovery/useSearchHistory', () => ({
+  useSearchHistory: () => mockUseSearchHistory,
+}));
+
+describe('ParksListScreen — search history', () => {
+  beforeEach(() => {
+    mockUseSearchHistory.queries = [];
+    mockUseSearchHistory.add.mockClear();
+    mockUseSearchHistory.clear.mockClear();
+  });
+
+  it('should show search history list when a search input is focused and history is non-empty', async () => {
+    mockUseSearchHistory.queries = ['Magic Kingdom'];
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('park-search-input')).toBeTruthy();
+    });
+
+    act(() => {
+      fireEvent(screen.getByTestId('park-search-input'), 'focus');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('search-history-list')).toBeTruthy();
+    });
+    expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+  });
+
+  it('should NOT show search history list when history is empty', async () => {
+    mockUseSearchHistory.queries = [];
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('park-search-input')).toBeTruthy();
+    });
+
+    act(() => {
+      fireEvent(screen.getByTestId('park-search-input'), 'focus');
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByTestId('search-history-list')).toBeNull();
+  });
+
+  it('should call clear when Clear history is pressed', async () => {
+    mockUseSearchHistory.queries = ['Magic Kingdom'];
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('park-search-input')).toBeTruthy();
+    });
+
+    act(() => {
+      fireEvent(screen.getByTestId('park-search-input'), 'focus');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('clear-history-button')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId('clear-history-button'));
+    expect(mockUseSearchHistory.clear).toHaveBeenCalled();
   });
 });

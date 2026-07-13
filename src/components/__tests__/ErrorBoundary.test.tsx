@@ -3,6 +3,11 @@ import { Text, View } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 import { captureException } from '@sentry/react-native';
 import ErrorBoundary from '../ErrorBoundary';
+import { initI18n } from '../../i18n/config';
+
+beforeAll(async () => {
+  await initI18n();
+});
 
 // Helper component that throws during render
 function ThrowOnRender({ message }: { message: string }): React.JSX.Element {
@@ -32,7 +37,7 @@ describe('ErrorBoundary', () => {
       );
 
       expect(screen.getByTestId('error-boundary-fallback')).toBeOnTheScreen();
-      expect(screen.getByText('Something went wrong')).toBeOnTheScreen();
+      expect(screen.getByText('Something went wrong. Please try again.')).toBeOnTheScreen();
     });
 
     it('calls Sentry.captureException with the error', () => {
@@ -46,7 +51,7 @@ describe('ErrorBoundary', () => {
       expect(captureException).toHaveBeenCalledWith(expect.any(Error));
     });
 
-    it('renders a retry button if onRetry is provided', () => {
+    it('renders a retry button with translated text if onRetry is provided', () => {
       const onRetry = jest.fn();
 
       render(
@@ -56,6 +61,7 @@ describe('ErrorBoundary', () => {
       );
 
       expect(screen.getByTestId('error-boundary-retry')).toBeOnTheScreen();
+      expect(screen.getByText('Retry')).toBeOnTheScreen();
     });
 
     it('does not render a retry button if onRetry is omitted', () => {

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { useTheme } from '../../theme/ThemeContext';
@@ -16,6 +17,7 @@ import type { ItineraryItem } from '../../data/models/Itinerary';
 
 export function ItineraryDetailScreen(): React.JSX.Element {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const route = useRoute<RouteProp<ParquesStackParamList, 'ItineraryDetail'>>();
   const navigation = useNavigation();
@@ -55,10 +57,10 @@ export function ItineraryDetailScreen(): React.JSX.Element {
   );
 
   const handleDelete = useCallback(() => {
-    Alert.alert('Delete Itinerary', 'Are you sure you want to delete this itinerary?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('itineraryDetail.deleteTitle'), t('itineraryDetail.deleteConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: () => {
           deleteItinerary(itineraryId);
@@ -66,7 +68,7 @@ export function ItineraryDetailScreen(): React.JSX.Element {
         },
       },
     ]);
-  }, [itineraryId, deleteItinerary, navigation]);
+  }, [itineraryId, deleteItinerary, navigation, t]);
 
   // Look up wait time/status for an attraction from useParkDetail data
   const getAttractionInfo = useCallback(
@@ -81,14 +83,14 @@ export function ItineraryDetailScreen(): React.JSX.Element {
     ({ item }: { item: ItineraryItem }) => {
       const attractionInfo = getAttractionInfo(item.attractionId);
 
-      let waitDisplay = '—';
+      let waitDisplay: string = '—';
       if (attractionInfo) {
         if (attractionInfo.status === 'operating') {
           waitDisplay = `${attractionInfo.waitTime} min`;
         } else if (attractionInfo.status === 'closed') {
-          waitDisplay = 'Closed';
+          waitDisplay = t('itineraryDetail.closed');
         } else {
-          waitDisplay = 'Down';
+          waitDisplay = t('itineraryDetail.down');
         }
       }
 
@@ -130,7 +132,7 @@ export function ItineraryDetailScreen(): React.JSX.Element {
         </View>
       );
     },
-    [getAttractionInfo, handleMoveUp, handleMoveDown, styles],
+    [getAttractionInfo, handleMoveUp, handleMoveDown, t, styles],
   );
 
   const keyExtractor = useCallback((item: ItineraryItem) => item.id, []);
@@ -142,7 +144,7 @@ export function ItineraryDetailScreen(): React.JSX.Element {
   if (!itinerary) {
     return (
       <View style={styles.centerContainer} testID="itinerary-detail-screen">
-        <Text style={styles.notFoundText}>Itinerary not found.</Text>
+        <Text style={styles.notFoundText}>{t('itineraryDetail.notFound')}</Text>
       </View>
     );
   }
@@ -157,7 +159,8 @@ export function ItineraryDetailScreen(): React.JSX.Element {
       <View style={styles.header}>
         <Text style={styles.parkName}>{itinerary.parkName}</Text>
         <Text style={styles.date}>
-          {itinerary.date ?? 'Date TBD'} · {itinerary.items.length} attractions
+          {itinerary.date ?? t('visitPlanner.dateTbd')} ·{' '}
+          {t('visitPlanner.attractionsCount', { count: itinerary.items.length })}
         </Text>
       </View>
 
@@ -178,7 +181,7 @@ export function ItineraryDetailScreen(): React.JSX.Element {
           onPress={handleDelete}
           activeOpacity={0.7}
         >
-          <Text style={styles.deleteButtonText}>Delete Itinerary</Text>
+          <Text style={styles.deleteButtonText}>{t('itineraryDetail.delete')}</Text>
         </TouchableOpacity>
       </View>
     </View>

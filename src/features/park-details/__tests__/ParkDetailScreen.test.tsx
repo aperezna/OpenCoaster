@@ -4,6 +4,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react-nativ
 import { ParkDetailScreen } from '../ParkDetailScreen';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
 import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscoveryProviderContext';
+import type { ParkSummary } from '../../../data/models/ParkSummary';
 
 const mockUseRoute = jest.fn();
 const mockNavigate = jest.fn();
@@ -88,7 +89,7 @@ describe('ParkDetailScreen', () => {
     });
     renderWithProviders();
     await waitFor(() => {
-      expect(screen.getByText('Parque no encontrado.')).toBeTruthy();
+      expect(screen.getByText('parkDetail.notFound')).toBeTruthy();
     });
   });
 
@@ -126,7 +127,7 @@ describe('ParkDetailScreen', () => {
     await waitFor(() => {
       expect(screen.getByTestId('attraction-list')).toBeTruthy();
     });
-    expect(screen.getByText('Atracciones')).toBeTruthy();
+    expect(screen.getByText('attractions.title')).toBeTruthy();
   });
 
   it('should have a default parkId when none is provided', async () => {
@@ -140,7 +141,7 @@ describe('ParkDetailScreen', () => {
     // This test verifies the fallback chain works without crashing
     renderWithProviders();
     await waitFor(() => {
-      expect(screen.getByText('Parque no encontrado.')).toBeTruthy();
+      expect(screen.getByText('parkDetail.notFound')).toBeTruthy();
     });
   });
 });
@@ -225,6 +226,115 @@ describe('ParkDetailScreen — Plan Visit CTA', () => {
     // Each Magic Kingdom attraction should have an add-to-itinerary button
     const addButtons = screen.getAllByTestId(/^add-to-itinerary-/);
     expect(addButtons.length).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Share button tests
+// ---------------------------------------------------------------------------
+
+jest.mock('react-native', () => {
+  const rn = jest.requireActual('react-native');
+  return {
+    ...rn,
+    Share: {
+      share: jest.fn().mockImplementation(() => Promise.resolve()),
+    },
+  };
+});
+
+function getMockShare(): jest.Mock {
+  const RN = jest.requireMock('react-native');
+  return RN.Share.share as jest.Mock;
+}
+
+describe('ParkDetailScreen — share park', () => {
+  beforeEach(() => {
+    mockUseRoute.mockReturnValue({
+      key: 'Parques',
+      name: 'Parques',
+      params: { parkId: 'magic-kingdom' },
+    });
+    getMockShare().mockReset();
+    getMockShare().mockImplementation(() => Promise.resolve());
+  });
+
+  it('should render a share button', async () => {
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('share-button')).toBeTruthy();
+    });
+  });
+
+  it('should call Share.share with translated share title and maps URL', async () => {
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('share-button')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId('share-button'));
+
+    const mockShare = getMockShare();
+    expect(mockShare).toHaveBeenCalledTimes(1);
+    const message = mockShare.mock.calls[0][0]?.message ?? '';
+    // Uses t() for the share title (mock returns key name)
+    expect(message).toContain('parkDetail.shareTitle');
+    // Maps URL is still included
+    expect(message).toContain('www.google.com/maps/dir/');
+  });
+
+  it('should use shareTitleNoLocation when park has no city/country', async () => {
+    mockUseRoute.mockReturnValue({
+      key: 'Parques',
+      name: 'Parques',
+      params: { parkId: 'no-location-park' },
+    });
+
+    const provider = new FixtureParkDiscoveryProvider();
+    const originalGetParkById = provider.getParkById.bind(provider);
+    jest.spyOn(provider, 'getParkById').mockImplementation(async (id: string) => {
+      if (id === 'no-location-park') {
+        return {
+          id: 'no-location-park',
+          name: 'Test Park No Location',
+          city: '',
+          country: '',
+          latitude: 51.6503,
+          longitude: 5.0485,
+          timezone: 'Europe/Amsterdam',
+        } as ParkSummary;
+      }
+      return originalGetParkById(id);
+    });
+
+    renderWithProviders(provider);
+    await waitFor(() => {
+      expect(screen.getByTestId('share-button')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId('share-button'));
+
+    const mockShare = getMockShare();
+    expect(mockShare).toHaveBeenCalledTimes(1);
+    const message = mockShare.mock.calls[0][0]?.message ?? '';
+    // Uses the no-location key from t() (mock returns key name)
+    expect(message).toContain('parkDetail.shareTitleNoLocation');
+    // Does NOT have location separator
+    expect(message).not.toContain('·');
+    // Maps URL IS still included
+    expect(message).toContain('www.google.com/maps/dir/');
+  });
+
+  it('should handle Share.share rejection gracefully', async () => {
+    getMockShare().mockRejectedValueOnce(new Error('Share cancelled'));
+
+    renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByTestId('share-button')).toBeTruthy();
+    });
+
+    // Should not throw
+    expect(() => fireEvent.press(screen.getByTestId('share-button'))).not.toThrow();
   });
 });
 

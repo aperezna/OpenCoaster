@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Switch, FlatList, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Switch,
+  FlatList,
+  StyleSheet,
+  Modal,
+  Pressable,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
@@ -7,6 +16,8 @@ import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProv
 import { useFavorites } from '../favorites/useFavorites';
 import { useItineraries } from '../visit-planner/useItineraries';
 import { ProfileSkeleton } from '../../components/Skeleton';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../i18n/useLanguage';
 import type { UserProfile } from '../../data/models/UserProfile';
 import type { FavoritePark } from '../../data/models/FavoritePark';
 import type { Itinerary } from '../../data/models/Itinerary';
@@ -18,6 +29,11 @@ const ONBOARDING_KEY = 'opencoaster:hasSeenOnboarding';
 
 type ProfileNavProp = BottomTabNavigationProp<RootTabParamList>;
 
+const LANGUAGE_OPTIONS = [
+  { label: 'English', value: 'en' as const },
+  { label: 'Español', value: 'es' as const },
+];
+
 export function ProfileScreen(): React.JSX.Element {
   const { colors, isDark, toggleTheme } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -26,6 +42,9 @@ export function ProfileScreen(): React.JSX.Element {
   const { favorites, clearFavorites } = useFavorites();
   const { itineraries } = useItineraries();
   const navigation = useNavigation<ProfileNavProp>();
+  const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
+  const [showLangPicker, setShowLangPicker] = useState(false);
 
   useEffect(() => {
     provider.getUserProfile().then(setProfile);
@@ -81,7 +100,7 @@ export function ProfileScreen(): React.JSX.Element {
       </Text>
 
       <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>Miembro desde</Text>
+        <Text style={styles.infoLabel}>{t('profile.memberSince')}</Text>
         <Text testID="profile-member-since" style={styles.infoValue}>
           {profile.memberSince}
         </Text>
@@ -89,9 +108,9 @@ export function ProfileScreen(): React.JSX.Element {
 
       {/* Favorites section */}
       <View style={styles.favoritesSection}>
-        <Text style={styles.favoritesTitle}>Favorites</Text>
+        <Text style={styles.favoritesTitle}>{t('profile.favorites')}</Text>
         {favorites.length === 0 ? (
-          <Text style={styles.emptyFavorites}>No favorites yet</Text>
+          <Text style={styles.emptyFavorites}>{t('profile.noFavorites')}</Text>
         ) : (
           <FlatList
             data={favorites}
@@ -111,9 +130,9 @@ export function ProfileScreen(): React.JSX.Element {
 
       {/* My Itineraries section */}
       <View style={styles.itinerariesSection}>
-        <Text style={styles.itinerariesTitle}>My Itineraries</Text>
+        <Text style={styles.itinerariesTitle}>{t('profile.itineraries')}</Text>
         {itineraries.length === 0 ? (
-          <Text style={styles.emptyItineraries}>No itineraries yet</Text>
+          <Text style={styles.emptyItineraries}>{t('profile.noItineraries')}</Text>
         ) : (
           <FlatList
             data={itineraries}
@@ -137,10 +156,10 @@ export function ProfileScreen(): React.JSX.Element {
 
       {/* Settings / Preferences section */}
       <View style={styles.settingsSection}>
-        <Text style={styles.settingsTitle}>Preferencias</Text>
+        <Text style={styles.settingsTitle}>{t('profile.preferences')}</Text>
 
         <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Modo oscuro</Text>
+          <Text style={styles.settingLabel}>{t('profile.darkMode')}</Text>
           <Switch
             testID="dark-mode-toggle"
             value={isDark}
@@ -149,16 +168,52 @@ export function ProfileScreen(): React.JSX.Element {
           />
         </View>
 
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Idioma</Text>
+        <TouchableOpacity
+          testID="language-picker-row"
+          style={styles.settingRow}
+          onPress={() => setShowLangPicker(true)}
+        >
+          <Text style={styles.settingLabel}>{t('profile.language')}</Text>
           <Text testID="setting-language-value" style={styles.settingValue}>
-            Español
+            {language === 'en' ? 'English' : 'Español'}
           </Text>
-        </View>
+        </TouchableOpacity>
+
+        <Modal
+          visible={showLangPicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowLangPicker(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setShowLangPicker(false)}>
+            <View style={styles.modalContent}>
+              {LANGUAGE_OPTIONS.map((option) => {
+                const isSelected = language === option.value;
+                return (
+                  <TouchableOpacity
+                    key={option.value}
+                    testID={`lang-option-${option.value}`}
+                    style={[styles.langOption, isSelected && styles.langOptionSelected]}
+                    onPress={() => {
+                      setLanguage(option.value);
+                      setShowLangPicker(false);
+                    }}
+                  >
+                    <Text
+                      style={[styles.langOptionText, isSelected && styles.langOptionTextSelected]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </Pressable>
+        </Modal>
       </View>
 
       <TouchableOpacity testID="logout-button" style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Cerrar sesión</Text>
+        <Text style={styles.logoutText}>{t('profile.logout')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -304,6 +359,39 @@ function createStyles(colors: ThemeColors) {
       fontSize: 13,
       color: colors.textSecondary,
       marginTop: 4,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      paddingVertical: 8,
+      width: 200,
+      elevation: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+    },
+    langOption: {
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+    },
+    langOptionText: {
+      fontSize: 16,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    langOptionSelected: {
+      backgroundColor: colors.accent + '20',
+    },
+    langOptionTextSelected: {
+      fontWeight: '700',
+      color: colors.accent,
     },
     logoutButton: {
       width: '100%',

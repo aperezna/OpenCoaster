@@ -1,13 +1,25 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, TextInput, FlatList, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import {
+  View,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  AppState,
+} from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
+import { useQueryClient } from '@tanstack/react-query';
 import { LeafletMap } from './LeafletMap';
 import { DEFAULT_REGION } from '../../config/constants';
 import { useSearchParks } from './useSearchParks';
+import { useSearchHistory } from './useSearchHistory';
 import { ExpoLocationService } from '../../data/location/ExpoLocationService';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import ErrorState from '../../components/ErrorState';
+import { OPENCOASTER_KEY_PREFIX } from '../../data/cache/queryClient';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { LocationService, Coords } from '../../data/location/LocationService';
 import type { ParkSearchQuery } from '../../data/providers/ParkDiscoveryProvider';
@@ -60,10 +72,13 @@ export function DiscoveryScreen({
   onParkSelect,
 }: DiscoveryScreenProps): React.JSX.Element {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [searchQuery, setSearchQuery] = useState<ParkSearchQuery>({});
   const [showResults, setShowResults] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [userCoords, setUserCoords] = useState<Coords | null>(null);
+  const { queries: searchHistory, add: addToHistory, clear: clearHistory } = useSearchHistory();
   const [proximityEnabled, setProximityEnabled] = useState(false);
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const provider = useParkDiscoveryProvider();
@@ -112,11 +127,56 @@ export function DiscoveryScreen({
   }, []);
 
   const { parks, error, refetch } = useSearchParks(searchQuery, provider);
+  const queryClient = useQueryClient();
+
+  // Stale-data pill
+  const [staleAgeMinutes, setStaleAgeMinutes] = useState<number | null>(null);
+  const staleKey = [...OPENCOASTER_KEY_PREFIX, 'searchParks', searchQuery];
+
+  const computeStaleAge = useCallback(() => {
+    const state = queryClient.getQueryState(staleKey);
+    if (!state?.dataUpdatedAt) {
+      setStaleAgeMinutes(null);
+      return;
+    }
+    const ageMs = Date.now() - state.dataUpdatedAt;
+    if (ageMs > 30_000) {
+      setStaleAgeMinutes(Math.floor(ageMs / 60_000));
+    } else {
+      setStaleAgeMinutes(null);
+    }
+  }, [queryClient, staleKey]);
+
+  useEffect(() => {
+    computeStaleAge();
+  }, [computeStaleAge, parks]);
+
+  // Recompute stale age when app returns to foreground
+  useEffect(() => {
+    if (typeof AppState?.addEventListener !== 'function') {
+      return;
+    }
+    const subscription = AppState.addEventListener('change', (nextState: string) => {
+      if (nextState === 'active') {
+        computeStaleAge();
+      }
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [computeStaleAge]);
 
   const handleNameChange = useCallback((text: string) => {
     setSearchQuery((prev) => ({ ...prev, name: text }));
     setShowResults(text.length > 0);
   }, []);
+
+  const handleSubmitEditing = useCallback(() => {
+    const text = searchQuery.name ?? '';
+    if (text.trim().length > 0) {
+      addToHistory(text.trim());
+    }
+  }, [searchQuery.name, addToHistory]);
 
   const handleSelectPark = useCallback(
     (parkId: string) => {
@@ -139,6 +199,7 @@ export function DiscoveryScreen({
         markers={parks ?? []}
         onMarkerPress={handleSelectPark}
         userLocation={userCoords}
+        detailButtonLabel={t('map.seeMore')}
       />
 
       {/* Proximity toggle */}
@@ -159,9 +220,18 @@ export function DiscoveryScreen({
                 proximityEnabled && styles.proximityToggleTextActive,
               ]}
             >
-              {proximityEnabled ? 'Todo el mundo' : 'Cerca de mí'}
+              {t(proximityEnabled ? 'discovery.allOver' : 'discovery.nearMe')}
             </Text>
           </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Stale-data pill */}
+      {staleAgeMinutes !== null && (
+        <View testID="stale-data-pill" style={styles.stalePill}>
+          <Text style={styles.stalePillText}>
+            {t('discovery.staleData', { minutes: staleAgeMinutes })}
+          </Text>
         </View>
       )}
 
@@ -170,12 +240,46 @@ export function DiscoveryScreen({
         <TextInput
           testID="search-name-input"
           style={styles.searchInput}
-          placeholder="Buscar parques..."
+          placeholder={t('common.searchPlaceholder')}
           placeholderTextColor="#999"
           value={searchQuery.name ?? ''}
           onChangeText={handleNameChange}
+          onSubmitEditing={handleSubmitEditing}
+          onFocus={() => setIsSearchFocused(true)}
+          onBlur={() => setIsSearchFocused(false)}
         />
       </View>
+
+      {/* Search history list */}
+      {isSearchFocused && searchHistory.length > 0 && !showResults && (
+        <View testID="search-history-list" style={styles.historyContainer}>
+          <FlatList
+            data={searchHistory}
+            keyExtractor={(item, index) => `history-${index}`}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                testID={`search-history-item-${item.replace(/\s+/g, '-')}`}
+                style={styles.historyItem}
+                onPress={() => {
+                  setSearchQuery((prev) => ({ ...prev, name: item }));
+                  setShowResults(true);
+                }}
+              >
+                <Text style={styles.historyItemText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity
+            testID="clear-history-button"
+            style={styles.clearHistoryButton}
+            onPress={() => {
+              clearHistory();
+            }}
+          >
+            <Text style={styles.clearHistoryText}>{t('common.clearHistory')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Search results dropdown */}
       {showResults && parks && parks.length > 0 && (
@@ -215,14 +319,14 @@ export function DiscoveryScreen({
 
       {showResults && parks && parks.length === 0 && (
         <View testID="search-results-empty" style={styles.resultsContainer}>
-          <Text style={styles.emptyText}>No parks found</Text>
+          <Text style={styles.emptyText}>{t('common.noParksFound')}</Text>
         </View>
       )}
 
       {error && (
         <View testID="discovery-error-overlay" style={styles.errorOverlay}>
           <ErrorState
-            message="No se pudieron cargar los parques. Verifica tu conexión."
+            message={t('common.connectionError')}
             onRetry={() => refetch()}
             testID="discovery-error"
           />
@@ -272,6 +376,28 @@ function createStyles(colors: ThemeColors) {
     proximityToggleTextActive: {
       color: '#fff',
     },
+    stalePill: {
+      position: 'absolute',
+      top: 52,
+      alignSelf: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#ddd',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 3,
+      zIndex: 10,
+    },
+    stalePillText: {
+      fontSize: 12,
+      color: '#888',
+      fontWeight: '500',
+    },
     searchContainer: {
       position: 'absolute',
       top: 8,
@@ -289,6 +415,41 @@ function createStyles(colors: ThemeColors) {
       shadowOpacity: 0.15,
       shadowRadius: 6,
       elevation: 4,
+    },
+    historyContainer: {
+      position: 'absolute',
+      top: 60,
+      left: 12,
+      right: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      maxHeight: 200,
+      shadowColor: colors.cardShadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      paddingVertical: 4,
+    },
+    historyItem: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    historyItemText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    clearHistoryButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      alignItems: 'center',
+    },
+    clearHistoryText: {
+      fontSize: 13,
+      color: colors.textTertiary,
+      fontWeight: '500',
     },
     resultsContainer: {
       position: 'absolute',

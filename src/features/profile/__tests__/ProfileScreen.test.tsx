@@ -54,6 +54,21 @@ jest.mock('../../visit-planner/useItineraries', () => ({
   }),
 }));
 
+// ---------------------------------------------------------------------------
+// useLanguage mock
+// ---------------------------------------------------------------------------
+
+const mockSetLanguage = jest.fn();
+let mockLanguage: 'en' | 'es' = 'en';
+
+jest.mock('../../../i18n/useLanguage', () => ({
+  useLanguage: () => ({
+    language: mockLanguage,
+    setLanguage: mockSetLanguage,
+    isReady: true,
+  }),
+}));
+
 const mockAsyncStorageRemoveItem = jest.fn();
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -93,6 +108,7 @@ describe('ProfileScreen', () => {
     mockFavorites = [];
     mockIsFavorite = () => false;
     mockToggleFavorite = () => {};
+    mockLanguage = 'en';
   });
 
   // ----- Loading state -----
@@ -124,10 +140,10 @@ describe('ProfileScreen', () => {
 
   // ----- Favorites -----
 
-  it('should show "No favorites yet" when there are no favorites', async () => {
+  it('should show empty state text when there are no favorites', async () => {
     renderScreen();
     await waitFor(() => {
-      expect(screen.getByText('No favorites yet')).toBeTruthy();
+      expect(screen.getByText('profile.noFavorites')).toBeTruthy();
     });
   });
 
@@ -184,34 +200,78 @@ describe('ProfileScreen', () => {
     });
   });
 
-  // ----- Dark mode toggle -----
+  // ----- Dark mode toggle & language picker -----
 
-  it('should render the dark mode toggle in the preferences section', async () => {
+  it('should render the dark mode toggle and language picker row in the preferences section', async () => {
     renderScreen();
 
     await waitFor(() => {
       expect(screen.getByTestId('dark-mode-toggle')).toBeTruthy();
     });
 
-    // Preferences section is visible
-    expect(screen.getByText('Preferencias')).toBeTruthy();
-    expect(screen.getByText('Modo oscuro')).toBeTruthy();
-    expect(screen.getByText('Idioma')).toBeTruthy();
-    expect(screen.getByText('Español')).toBeTruthy();
+    // Preferences section is visible — t() mock returns key names
+    expect(screen.getByText('profile.preferences')).toBeTruthy();
+    expect(screen.getByText('profile.darkMode')).toBeTruthy();
+    // Language label uses t('profile.language') which mock returns as key
+    expect(screen.getByText('profile.language')).toBeTruthy();
+    // Current language shown (default en → English) — modal also renders, so multiple
+    expect(screen.getAllByText('English').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should show language options modal when language row is tapped', async () => {
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('language-picker-row')).toBeTruthy();
+    });
+
+    // Tap the language row to open the picker
+    fireEvent.press(screen.getByTestId('language-picker-row'));
+
+    // Both options are rendered
+    expect(screen.getByTestId('lang-option-en')).toBeTruthy();
+    expect(screen.getByTestId('lang-option-es')).toBeTruthy();
+  });
+
+  it('should call setLanguage with es when Español is selected from picker', async () => {
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('language-picker-row')).toBeTruthy();
+    });
+
+    // Tap Español (find the option by testID regardless of modal visibility in test env)
+    const esOption = screen.getByTestId('lang-option-es');
+    fireEvent.press(esOption);
+
+    expect(mockSetLanguage).toHaveBeenCalledWith('es');
+  });
+
+  it('should show Español as the current language when language is es', async () => {
+    mockLanguage = 'es';
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('setting-language-value')).toBeTruthy();
+    });
+
+    // Modal also renders both options, so Español appears multiple times
+    expect(screen.getAllByText('Español').length).toBeGreaterThanOrEqual(1);
   });
 
   // ----- My Itineraries -----
 
-  it('should show "No itineraries yet" when there are no itineraries', async () => {
+  it('should show empty state when there are no itineraries', async () => {
     mockItineraries = [];
 
     renderScreen();
 
     await waitFor(() => {
-      expect(screen.getByText('No itineraries yet')).toBeTruthy();
+      expect(screen.getByText('profile.noItineraries')).toBeTruthy();
     });
     // Section title is visible
-    expect(screen.getByText('My Itineraries')).toBeTruthy();
+    expect(screen.getByText('profile.itineraries')).toBeTruthy();
   });
 
   it('should render itineraries with name, date, and attraction count', async () => {
@@ -242,7 +302,7 @@ describe('ProfileScreen', () => {
     renderScreen();
 
     await waitFor(() => {
-      expect(screen.getByText('My Itineraries')).toBeTruthy();
+      expect(screen.getByText('profile.itineraries')).toBeTruthy();
     });
 
     // Both park names visible

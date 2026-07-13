@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -15,6 +16,7 @@ import type { Itinerary } from '../../data/models/Itinerary';
 
 export function VisitPlannerScreen(): React.JSX.Element {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<NativeStackNavigationProp<ParquesStackParamList>>();
   const route = useRoute<RouteProp<ParquesStackParamList, 'VisitPlanner'>>();
@@ -69,13 +71,14 @@ export function VisitPlannerScreen(): React.JSX.Element {
         <View style={styles.cardContent}>
           <Text style={styles.cardParkName}>{item.parkName}</Text>
           <Text style={styles.cardMeta}>
-            {item.date ?? 'Date TBD'} · {item.items.length} attractions
+            {item.date ?? t('visitPlanner.dateTbd')} ·{' '}
+            {t('visitPlanner.attractionsCount', { count: item.items.length })}
           </Text>
         </View>
         <Text style={styles.cardArrow}>›</Text>
       </TouchableOpacity>
     ),
-    [handleItineraryPress, styles],
+    [handleItineraryPress, t, styles],
   );
 
   const keyExtractor = useCallback((item: Itinerary) => item.id, []);
@@ -94,7 +97,7 @@ export function VisitPlannerScreen(): React.JSX.Element {
           onPress={handleStartCreating}
           activeOpacity={0.7}
         >
-          <Text style={styles.createButtonText}>+ Create Itinerary</Text>
+          <Text style={styles.createButtonText}>{t('visitPlanner.createItinerary')}</Text>
         </TouchableOpacity>
       )}
 
@@ -104,7 +107,7 @@ export function VisitPlannerScreen(): React.JSX.Element {
           <TextInput
             testID="itinerary-park-input"
             style={styles.input}
-            placeholder="Park name"
+            placeholder={t('visitPlanner.parkNamePlaceholder')}
             value={parkNameInput}
             onChangeText={setParkNameInput}
             editable={!route.params?.parkName} // prevent editing when pre-filled
@@ -112,7 +115,7 @@ export function VisitPlannerScreen(): React.JSX.Element {
           <TextInput
             testID="itinerary-date-input"
             style={styles.input}
-            placeholder="Date (YYYY-MM-DD)"
+            placeholder={t('visitPlanner.datePlaceholder')}
             value={dateInput}
             onChangeText={setDateInput}
           />
@@ -123,7 +126,7 @@ export function VisitPlannerScreen(): React.JSX.Element {
               onPress={handleConfirmCreate}
               activeOpacity={0.7}
             >
-              <Text style={styles.confirmButtonText}>Create</Text>
+              <Text style={styles.confirmButtonText}>{t('common.create')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               testID="cancel-create-button"
@@ -131,7 +134,7 @@ export function VisitPlannerScreen(): React.JSX.Element {
               onPress={handleCancelCreating}
               activeOpacity={0.7}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -140,8 +143,8 @@ export function VisitPlannerScreen(): React.JSX.Element {
       {/* Itinerary list or empty state */}
       {!isLoading && itineraries.length === 0 ? (
         <View style={styles.emptyState} testID="empty-state">
-          <Text style={styles.emptyTitle}>No itineraries yet</Text>
-          <Text style={styles.emptySubtitle}>Create an itinerary to plan your park visit</Text>
+          <Text style={styles.emptyTitle}>{t('visitPlanner.emptyTitle')}</Text>
+          <Text style={styles.emptySubtitle}>{t('visitPlanner.emptySubtitle')}</Text>
         </View>
       ) : (
         <FlatList

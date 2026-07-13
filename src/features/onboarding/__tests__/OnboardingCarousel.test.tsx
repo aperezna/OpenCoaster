@@ -2,39 +2,33 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { OnboardingCarousel } from '../OnboardingCarousel';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const SLIDES = [
-  { title: 'Welcome to OpenCoaster', body: 'Discover amazing amusement parks around the world.' },
-  {
-    title: 'Discover Parks',
-    body: 'Browse parks near you, search by name, and explore what each park has to offer.',
-  },
-  {
-    title: 'Save Your Favorites',
-    body: 'Keep track of the parks you love and plan your next adventure.',
-  },
-];
+// react-i18next is auto-mocked via jest.config.js moduleNameMapper
+// t(key) returns the key itself, so we assert key names directly
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe('OnboardingCarousel', () => {
-  it('should render all 3 slides with titles and body text', () => {
+  it('should render all 3 slides with translated titles and body text', () => {
     render(<OnboardingCarousel onComplete={() => {}} />);
 
-    SLIDES.forEach((slide) => {
-      expect(screen.getByText(slide.title)).toBeTruthy();
-      expect(screen.getByText(slide.body)).toBeTruthy();
+    const expectedKeys = [
+      { title: 'onboarding.welcomeTitle', body: 'onboarding.welcomeBody' },
+      { title: 'onboarding.discoverTitle', body: 'onboarding.discoverBody' },
+      { title: 'onboarding.favoritesTitle', body: 'onboarding.favoritesBody' },
+    ];
+
+    expectedKeys.forEach(({ title, body }) => {
+      expect(screen.getByText(title)).toBeTruthy();
+      expect(screen.getByText(body)).toBeTruthy();
     });
   });
 
-  it('should render Skip button', () => {
+  it('should render Skip button with translated text', () => {
     render(<OnboardingCarousel onComplete={() => {}} />);
     expect(screen.getByTestId('onboarding-skip-button')).toBeTruthy();
+    expect(screen.getByText('onboarding.skip')).toBeTruthy();
   });
 
   it('should call onComplete when Skip is pressed', () => {
@@ -45,30 +39,26 @@ describe('OnboardingCarousel', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('should show Next button on slide 0 and slide 1', () => {
+  it('should show Next button text on slide 0 and slide 1, and Get Started on slide 2', () => {
     render(<OnboardingCarousel onComplete={() => {}} />);
 
     // Initially on slide 0 — "Next" should be visible, "Get Started" should not
-    expect(screen.getByTestId('onboarding-next-button')).toBeTruthy();
-    expect(screen.queryByTestId('onboarding-get-started-button')).toBeNull();
-  });
-
-  it('should advance to next slide when Next is pressed', () => {
-    render(<OnboardingCarousel onComplete={() => {}} />);
+    expect(screen.getByText('onboarding.next')).toBeTruthy();
+    expect(screen.queryByText('onboarding.getStarted')).toBeNull();
 
     // Press Next to go to slide 1
     fireEvent.press(screen.getByTestId('onboarding-next-button'));
 
     // Slide 1 should show "Next", not "Get Started"
-    expect(screen.getByTestId('onboarding-next-button')).toBeTruthy();
-    expect(screen.queryByTestId('onboarding-get-started-button')).toBeNull();
+    expect(screen.getByText('onboarding.next')).toBeTruthy();
+    expect(screen.queryByText('onboarding.getStarted')).toBeNull();
 
     // Press Next to go to slide 2
     fireEvent.press(screen.getByTestId('onboarding-next-button'));
 
     // Slide 2 should show "Get Started", not "Next"
-    expect(screen.getByTestId('onboarding-get-started-button')).toBeTruthy();
-    expect(screen.queryByTestId('onboarding-next-button')).toBeNull();
+    expect(screen.getByText('onboarding.getStarted')).toBeTruthy();
+    expect(screen.queryByText('onboarding.next')).toBeNull();
   });
 
   it('should call onComplete when Get Started is pressed', () => {

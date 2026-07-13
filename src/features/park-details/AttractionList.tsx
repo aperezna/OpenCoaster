@@ -1,16 +1,17 @@
 import React, { useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Attraction } from '../../data/models/Attraction';
 import type { ThemeColors } from '../../theme/colors';
 
-const typeLabels: Record<string, string> = {
-  roller_coaster: 'Montaña rusa',
-  water_ride: 'Atracción acuática',
-  dark_ride: 'Atracción oscura',
-  flat_ride: 'Atracción plana',
-  show: 'Espectáculo',
-  family: 'Familiar',
+const typeKeys: Record<string, string> = {
+  roller_coaster: 'attractions.typeRollerCoaster',
+  water_ride: 'attractions.typeWaterRide',
+  dark_ride: 'attractions.typeDarkRide',
+  flat_ride: 'attractions.typeFlatRide',
+  show: 'attractions.typeShow',
+  family: 'attractions.typeFamily',
 };
 
 const statusColors: Record<string, string> = {
@@ -31,19 +32,20 @@ export function AttractionList({
   isAttractionAdded,
 }: AttractionListProps): React.JSX.Element {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   if (attractions.length === 0) {
     return (
       <View testID="attraction-list-empty" style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No attractions available</Text>
+        <Text style={styles.emptyText}>{t('attractions.empty')}</Text>
       </View>
     );
   }
 
   return (
     <View testID="attraction-list" style={styles.container}>
-      <Text style={styles.sectionTitle}>Atracciones</Text>
+      <Text style={styles.sectionTitle}>{t('attractions.title')}</Text>
       <FlatList
         data={attractions}
         keyExtractor={(item) => item.id}
@@ -57,7 +59,7 @@ export function AttractionList({
               <View style={styles.itemContent}>
                 <View style={styles.itemLeft}>
                   <Text style={styles.attractionName}>{item.name}</Text>
-                  <Text style={styles.attractionType}>{typeLabels[item.type] ?? item.type}</Text>
+                  <Text style={styles.attractionType}>{t(typeKeys[item.type] ?? item.type)}</Text>
                 </View>
                 <View style={styles.itemRight}>
                   <View
@@ -70,15 +72,15 @@ export function AttractionList({
                     {item.status === 'operating'
                       ? `${item.waitTime} min`
                       : item.status === 'closed'
-                        ? 'Cerrado'
-                        : 'Fuera de servicio'}
+                        ? t('attractions.closed')
+                        : t('attractions.outOfService')}
                   </Text>
                 </View>
               </View>
               <View style={styles.itemActions}>
                 {isAdded && (
                   <View testID={`added-indicator-${item.id}`} style={styles.addedBadge}>
-                    <Text style={styles.addedText}>Added</Text>
+                    <Text style={styles.addedText}>{t('attractions.added')}</Text>
                   </View>
                 )}
                 {showAdd && (
@@ -88,7 +90,7 @@ export function AttractionList({
                     onPress={() => onAddToItinerary(item)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.addButtonText}>+ Itinerary</Text>
+                    <Text style={styles.addButtonText}>{t('attractions.addToItinerary')}</Text>
                   </TouchableOpacity>
                 )}
               </View>

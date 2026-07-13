@@ -10,12 +10,16 @@ import type { ParkSummary } from '../../data/models/ParkSummary';
 const LEAFLET_VERSION = '1.9.4';
 const CLUSTER_VERSION = '1.5.3';
 
-function buildMapHtml(initialRegion: {
-  latitude: number;
-  longitude: number;
-  latitudeDelta: number;
-  longitudeDelta: number;
-}): string {
+function buildMapHtml(
+  initialRegion: {
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  },
+  strings?: { detailButton?: string },
+): string {
+  const detailButton = strings?.detailButton ?? 'Ver más';
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -99,7 +103,7 @@ function buildMapHtml(initialRegion: {
             if (park.distanceText) {
               popupHtml += '<div class="popup-distance">' + park.distanceText + '</div>';
             }
-            popupHtml += '<button class="popup-btn" id="view-park-' + park.id + '">Ver m&aacute;s</button>' +
+            popupHtml += '<button class="popup-btn" id="view-park-' + park.id + '">' + detailButton + '</button>' +
               '</div>';
             marker.bindPopup(popupHtml);
 
@@ -202,6 +206,7 @@ interface LeafletMapProps {
   markers: ParkSummary[];
   onMarkerPress: (parkId: string) => void;
   userLocation?: { latitude: number; longitude: number } | null;
+  detailButtonLabel?: string;
   testID?: string;
 }
 
@@ -214,6 +219,7 @@ export function LeafletMap({
   markers,
   onMarkerPress,
   userLocation,
+  detailButtonLabel,
   testID,
 }: LeafletMapProps): React.JSX.Element {
   const webViewRef = useRef<WebView>(null);
@@ -310,7 +316,7 @@ export function LeafletMap({
     [markers, onMarkerPress, userLocation, sendToMap],
   );
 
-  const html = buildMapHtml(initialRegion);
+  const html = buildMapHtml(initialRegion, { detailButton: detailButtonLabel });
 
   return (
     <View style={styles.container} testID={testID}>

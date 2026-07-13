@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,28 +30,33 @@ interface Slide {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const SLIDES: Slide[] = [
-  {
-    title: 'Welcome to OpenCoaster',
-    body: 'Discover amazing amusement parks around the world.',
-  },
-  {
-    title: 'Discover Parks',
-    body: 'Browse parks near you, search by name, and explore what each park has to offer.',
-  },
-  {
-    title: 'Save Your Favorites',
-    body: 'Keep track of the parks you love and plan your next adventure.',
-  },
-];
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function OnboardingCarousel({ onComplete }: OnboardingCarouselProps): React.JSX.Element {
+  const { t } = useTranslation();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const SLIDES: Slide[] = useMemo(
+    () => [
+      {
+        title: t('onboarding.welcomeTitle'),
+        body: t('onboarding.welcomeBody'),
+      },
+      {
+        title: t('onboarding.discoverTitle'),
+        body: t('onboarding.discoverBody'),
+      },
+      {
+        title: t('onboarding.favoritesTitle'),
+        body: t('onboarding.favoritesBody'),
+      },
+    ],
+    [t],
+  );
+
   const isLastSlide = currentSlide === SLIDES.length - 1;
 
   const handleMomentumEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -83,7 +89,7 @@ export function OnboardingCarousel({ onComplete }: OnboardingCarouselProps): Rea
         style={styles.skipButton}
         onPress={onComplete}
       >
-        <Text style={styles.skipText}>Skip</Text>
+        <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
       </TouchableOpacity>
 
       {/* Slides */}
@@ -133,7 +139,7 @@ export function OnboardingCarousel({ onComplete }: OnboardingCarouselProps): Rea
             style={styles.actionButton}
             onPress={handleGetStarted}
           >
-            <Text style={styles.actionButtonText}>Get Started</Text>
+            <Text style={styles.actionButtonText}>{t('onboarding.getStarted')}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -141,7 +147,7 @@ export function OnboardingCarousel({ onComplete }: OnboardingCarouselProps): Rea
             style={styles.actionButton}
             onPress={handleNext}
           >
-            <Text style={styles.actionButtonText}>Next</Text>
+            <Text style={styles.actionButtonText}>{t('onboarding.next')}</Text>
           </TouchableOpacity>
         )}
       </View>

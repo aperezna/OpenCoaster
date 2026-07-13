@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import i18next from 'i18next';
 import { captureException } from '@sentry/react-native';
 
 interface ErrorBoundaryProps {
@@ -34,14 +35,14 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     if (this.state.hasError) {
       return (
         <View style={styles.container} testID="error-boundary-fallback">
-          <Text style={styles.title}>Something went wrong</Text>
+          <Text style={styles.title}>{i18next.t('common.error')}</Text>
           {this.props.onRetry && (
             <TouchableOpacity
               style={styles.retryButton}
               onPress={this.handleRetry}
               testID="error-boundary-retry"
             >
-              <Text style={styles.retryText}>Try Again</Text>
+              <Text style={styles.retryText}>{i18next.t('common.retry')}</Text>
             </TouchableOpacity>
           )}
         </View>
