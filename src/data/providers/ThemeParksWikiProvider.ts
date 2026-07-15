@@ -188,7 +188,7 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
   // -- Interface methods ----------------------------------------------------
 
   async searchParks(query: ParkSearchQuery): Promise<ParkSummary[]> {
-    const { name, proximity } = query;
+    const { name, city, country, proximity } = query;
 
     // Fetch all top-level destinations
     // API returns { destinations: [...] }
@@ -229,6 +229,16 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
     if (name) {
       const q = name.toLowerCase();
       results = results.filter((p) => p.name.toLowerCase().includes(q));
+    }
+
+    if (city) {
+      const q = city.toLowerCase();
+      results = results.filter((p) => p.city.toLowerCase().includes(q));
+    }
+
+    if (country) {
+      const q = country.toLowerCase();
+      results = results.filter((p) => p.country.toLowerCase().includes(q));
     }
 
     // Apply proximity filter (Haversine distance in km)
@@ -300,56 +310,50 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
   }
 
   async getParkHours(parkId: string): Promise<ParkHours | null> {
-    try {
-      const entity = await this.fetchJson<ThemeParksEntity>(`/entity/${parkId}/schedule`);
+    const entity = await this.fetchJson<ThemeParksEntity>(`/entity/${parkId}/schedule`);
 
-      if (!entity.schedule || entity.schedule.length === 0) {
-        return null;
-      }
-
-      // Pick the first OPERATING entry for today; fall back to the first
-      // OPERATING entry in the schedule list.
-      const today = new Date().toISOString().split('T')[0];
-      const schedule =
-        entity.schedule.find((h) => h.date === today && h.type === 'OPERATING') ??
-        entity.schedule.find((h) => h.type === 'OPERATING');
-
-      if (!schedule?.openingTime || !schedule?.closingTime) {
-        return null;
-      }
-
-      return {
-        opening: schedule.openingTime,
-        closing: schedule.closingTime,
-        timezone: entity.timezone,
-      };
-    } catch {
+    if (!entity.schedule || entity.schedule.length === 0) {
       return null;
     }
+
+    // Pick the first OPERATING entry for today; fall back to the first
+    // OPERATING entry in the schedule list.
+    const today = new Date().toISOString().split('T')[0];
+    const schedule =
+      entity.schedule.find((h) => h.date === today && h.type === 'OPERATING') ??
+      entity.schedule.find((h) => h.type === 'OPERATING');
+
+    if (!schedule?.openingTime || !schedule?.closingTime) {
+      return null;
+    }
+
+    return {
+      opening: schedule.openingTime,
+      closing: schedule.closingTime,
+      timezone: entity.timezone,
+    };
   }
 
   async getParkWeather(parkId: string): Promise<ParkWeather | null> {
-    try {
-      // Fetch park entity to get coordinates
-      const entity = await this.fetchJson<ThemeParksEntity>(`/entity/${parkId}`);
-      const lat = entity.location?.latitude;
-      const lng = entity.location?.longitude;
-      if (lat == null || lng == null) return null;
+    // Fetch park entity to get coordinates
+    const entity = await this.fetchJson<ThemeParksEntity>(`/entity/${parkId}`);
+    const lat = entity.location?.latitude;
+    const lng = entity.location?.longitude;
+    if (lat == null || lng == null) return null;
 
-      // Fetch weather from Open-Meteo (no API key required)
-      const url = `${OPEN_METEO_BASE}?latitude=${lat}&longitude=${lng}&current_weather=true`;
-      const response = await fetch(url);
-      if (!response.ok) return null;
-
-      const data: OpenMeteoResponse = await response.json();
-      return {
-        temperature: data.current_weather.temperature,
-        condition: mapWeatherCode(data.current_weather.weathercode),
-        unit: 'C',
-      };
-    } catch {
-      return null;
+    // Fetch weather from Open-Meteo (no API key required)
+    const url = `${OPEN_METEO_BASE}?latitude=${lat}&longitude=${lng}&current_weather=true`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Open-Meteo API error: ${response.status} ${response.statusText}`);
     }
+
+    const data: OpenMeteoResponse = await response.json();
+    return {
+      temperature: data.current_weather.temperature,
+      condition: mapWeatherCode(data.current_weather.weathercode),
+      unit: 'C',
+    };
   }
 
   async getUserProfile(): Promise<UserProfile> {

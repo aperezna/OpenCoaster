@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Attraction } from '../../data/models/Attraction';
@@ -24,12 +24,16 @@ interface AttractionListProps {
   attractions: Attraction[];
   onAddToItinerary?: (attraction: Attraction) => void;
   isAttractionAdded?: (attractionId: string) => boolean;
+  onLongPress?: (attraction: Attraction) => void;
+  monitoredIds?: Set<string>;
 }
 
 export function AttractionList({
   attractions,
   onAddToItinerary,
   isAttractionAdded,
+  onLongPress,
+  monitoredIds,
 }: AttractionListProps): React.JSX.Element {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -53,12 +57,29 @@ export function AttractionList({
         renderItem={({ item }) => {
           const isAdded = isAttractionAdded?.(item.id) ?? false;
           const showAdd = onAddToItinerary && !isAdded;
+          const isMonitored = monitoredIds?.has(item.id) ?? false;
 
           return (
-            <View testID={`attraction-${item.id}`} style={styles.item}>
+            <Pressable
+              testID={`attraction-${item.id}`}
+              style={styles.item}
+              onLongPress={onLongPress ? () => onLongPress(item) : undefined}
+              disabled={!onLongPress}
+            >
               <View style={styles.itemContent}>
                 <View style={styles.itemLeft}>
-                  <Text style={styles.attractionName}>{item.name}</Text>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.attractionName}>{item.name}</Text>
+                    {isMonitored && (
+                      <Text
+                        testID={`bell-indicator-${item.id}`}
+                        style={styles.bellIcon}
+                        accessibilityLabel={t('attractions.bellIndicator')}
+                      >
+                        🔔
+                      </Text>
+                    )}
+                  </View>
                   <Text style={styles.attractionType}>{t(typeKeys[item.type] ?? item.type)}</Text>
                 </View>
                 <View style={styles.itemRight}>
@@ -94,7 +115,7 @@ export function AttractionList({
                   </TouchableOpacity>
                 )}
               </View>
-            </View>
+            </Pressable>
           );
         }}
       />
@@ -143,10 +164,18 @@ function createStyles(colors: ThemeColors) {
       flex: 1,
       marginRight: 12,
     },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
     attractionName: {
       fontSize: 16,
       fontWeight: '500',
       color: colors.text,
+    },
+    bellIcon: {
+      fontSize: 14,
     },
     attractionType: {
       fontSize: 12,

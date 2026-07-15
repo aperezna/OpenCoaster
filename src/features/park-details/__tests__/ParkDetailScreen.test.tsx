@@ -32,6 +32,22 @@ function renderWithProviders(provider = new FixtureParkDiscoveryProvider()) {
   );
 }
 
+class WeatherFailureProvider extends FixtureParkDiscoveryProvider {
+  async getParkWeather(): Promise<never> {
+    throw new Error('Weather service offline');
+  }
+}
+
+class HoursAndAttractionsFailureProvider extends FixtureParkDiscoveryProvider {
+  async getParkHours(): Promise<never> {
+    throw new Error('Hours service offline');
+  }
+
+  async getParkAttractions(): Promise<never> {
+    throw new Error('Attractions service offline');
+  }
+}
+
 describe('ParkDetailScreen', () => {
   beforeEach(() => {
     mockUseRoute.mockReturnValue({
@@ -143,6 +159,35 @@ describe('ParkDetailScreen', () => {
     await waitFor(() => {
       expect(screen.getByText('parkDetail.notFound')).toBeTruthy();
     });
+  });
+
+  it('should show an explicit weather degraded state when only weather fails', async () => {
+    renderWithProviders(new WeatherFailureProvider());
+
+    await waitFor(() => {
+      expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+    });
+
+    expect(screen.getByTestId('weather-error-card')).toBeTruthy();
+    expect(screen.getByText('parkDetail.sectionUnavailable')).toBeTruthy();
+    expect(screen.getByTestId('hours-card')).toBeTruthy();
+    expect(screen.getByTestId('attraction-list')).toBeTruthy();
+    expect(screen.queryByText('parkDetail.loadError')).toBeNull();
+  });
+
+  it('should show explicit degraded states when multiple secondary queries fail', async () => {
+    renderWithProviders(new HoursAndAttractionsFailureProvider());
+
+    await waitFor(() => {
+      expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+    });
+
+    expect(screen.getByTestId('weather-card')).toBeTruthy();
+    expect(screen.getByTestId('hours-error-card')).toBeTruthy();
+    expect(screen.getByTestId('attractions-error-state')).toBeTruthy();
+    expect(screen.queryByTestId('hours-card')).toBeNull();
+    expect(screen.queryByTestId('attraction-list')).toBeNull();
+    expect(screen.queryByText('parkDetail.loadError')).toBeNull();
   });
 });
 

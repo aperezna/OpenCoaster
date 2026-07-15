@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Linking,
+  Alert,
   Share,
   StyleSheet,
 } from 'react-native';
@@ -23,6 +24,10 @@ import { ItineraryPickerModal } from '../visit-planner/ItineraryPickerModal';
 import { WeatherCard } from './WeatherCard';
 import { HoursCard } from './HoursCard';
 import { AttractionList } from './AttractionList';
+import { BusyMeter } from './BusyMeter';
+import { calculateBusyLevel } from './calculateBusyLevel';
+import { ThresholdModal } from '../notifications/ThresholdModal';
+import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
 import {
   ParkDetailSkeleton,
   WeatherCardSkeleton,
@@ -67,8 +72,29 @@ export function ParkDetailScreen(): React.JSX.Element {
     isAttractionsLoading,
     isFetching,
     error,
+    weatherError,
+    hoursError,
+    attractionsError,
     refetchAll,
   } = useParkDetail(parkId, provider);
+
+  const busyMeterResult = useMemo(
+    () => (attractions ? calculateBusyLevel(attractions, new Date()) : null),
+    [attractions],
+  );
+
+  const {
+    preferences,
+    setThreshold,
+    removeThreshold,
+    getMonitored,
+    isLoading: _notifPrefsLoading,
+  } = useNotificationPreferences();
+  const [thresholdAttraction, setThresholdAttraction] = useState<Attraction | null>(null);
+  const monitoredIds = useMemo(
+    () => new Set(getMonitored().map((m) => m.attractionId)),
+    [getMonitored, preferences],
+  );
 
   const handleDirections = useCallback(() => {
     if (park) {
@@ -138,6 +164,60 @@ export function ParkDetailScreen(): React.JSX.Element {
   const handlePickerClose = useCallback(() => {
     setSelectedAttraction(null);
   }, []);
+
+  const handleAttractionLongPress = useCallback((attraction: Attraction) => {
+    setThresholdAttraction(attraction);
+  }, []);
+
+  const handleThresholdConfirm = useCallback(
+    (thresholdMin: number) => {
+      if (thresholdAttraction) {
+        setThreshold(
+          thresholdAttraction.parkId,
+          thresholdAttraction.id,
+          thresholdAttraction.name,
+          thresholdMin,
+        )
+          .then((permissionStatus) => {
+            if (permissionStatus === 'denied') {
+              Alert.alert(t('notifications.permissionDenied'), '', [
+                {
+                  text: t('common.cancel'),
+                  style: 'cancel',
+                },
+                {
+                  text: t('notifications.openSettings'),
+                  onPress: () => {
+                    Linking.openURL('app-settings:').catch(() => {
+                      // OS settings deep-link unavailable — noop
+                    });
+                  },
+                },
+              ]);
+            }
+          })
+          .catch(() => {
+            // AsyncStorage write failure — non-fatal, modal just re-closes
+          });
+      }
+      setThresholdAttraction(null);
+    },
+    [thresholdAttraction, setThreshold, t],
+  );
+
+  const handleThresholdCancel = useCallback(() => {
+    setThresholdAttraction(null);
+  }, []);
+
+  const renderUnavailableSection = useCallback(
+    (titleKey: string, testID: string) => (
+      <View testID={testID} style={styles.unavailableCard}>
+        <Text style={styles.unavailableTitle}>{t(titleKey)}</Text>
+        <Text style={styles.unavailableMessage}>{t('parkDetail.sectionUnavailable')}</Text>
+      </View>
+    ),
+    [styles, t],
+  );
 
   if (error && !park) {
     return (
@@ -233,14 +313,29 @@ export function ParkDetailScreen(): React.JSX.Element {
         </TouchableOpacity>
       </View>
 
+      {/* Busy meter */}
+      {busyMeterResult && (
+        <View style={styles.busyMeterContainer}>
+          <BusyMeter result={busyMeterResult} />
+        </View>
+      )}
+
       {/* Weather + Hours cards row with individual loading */}
       <View style={styles.cardsRow}>
         {weather ? (
           <WeatherCard weather={weather} />
         ) : isWeatherLoading ? (
           <WeatherCardSkeleton />
+        ) : weatherError ? (
+          renderUnavailableSection('weather.title', 'weather-error-card')
         ) : null}
-        {hours ? <HoursCard hours={hours} /> : isHoursLoading ? <HoursCardSkeleton /> : null}
+        {hours ? (
+          <HoursCard hours={hours} />
+        ) : isHoursLoading ? (
+          <HoursCardSkeleton />
+        ) : hoursError ? (
+          renderUnavailableSection('hours.title', 'hours-error-card')
+        ) : null}
       </View>
 
       {/* Attractions with individual loading */}
@@ -249,9 +344,16 @@ export function ParkDetailScreen(): React.JSX.Element {
           attractions={attractions}
           onAddToItinerary={handleAddToItinerary}
           isAttractionAdded={isAttractionInItinerary}
+          onLongPress={handleAttractionLongPress}
+          monitoredIds={monitoredIds}
         />
       ) : isAttractionsLoading ? (
         <AttractionListSkeleton />
+      ) : attractionsError ? (
+        <View testID="attractions-error-state" style={styles.attractionsUnavailableContainer}>
+          <Text style={styles.attractionsUnavailableTitle}>{t('attractions.title')}</Text>
+          <Text style={styles.unavailableMessage}>{t('parkDetail.sectionUnavailable')}</Text>
+        </View>
       ) : null}
 
       {/* Itinerary picker modal */}
@@ -262,6 +364,16 @@ export function ParkDetailScreen(): React.JSX.Element {
         onCreateNew={handlePickerCreateNew}
         onClose={handlePickerClose}
       />
+
+      {/* Threshold setting modal */}
+      {thresholdAttraction && (
+        <ThresholdModal
+          visible={thresholdAttraction !== null}
+          attractionName={thresholdAttraction.name}
+          onConfirm={handleThresholdConfirm}
+          onCancel={handleThresholdCancel}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -375,9 +487,50 @@ function createStyles(colors: ThemeColors) {
       fontWeight: '700',
       color: '#fff',
     },
+    busyMeterContainer: {
+      paddingHorizontal: 16,
+      marginBottom: 8,
+    },
     cardsRow: {
       flexDirection: 'row',
       paddingHorizontal: 12,
+      marginBottom: 8,
+    },
+    unavailableCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginHorizontal: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
+      minHeight: 120,
+      justifyContent: 'center',
+    },
+    unavailableTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    unavailableMessage: {
+      fontSize: 14,
+      color: colors.textTertiary,
+      lineHeight: 20,
+    },
+    attractionsUnavailableContainer: {
+      marginTop: 16,
+      marginHorizontal: 16,
+      padding: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    attractionsUnavailableTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
       marginBottom: 8,
     },
   });

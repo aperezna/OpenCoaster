@@ -95,3 +95,49 @@ describe('AttractionList — add to itinerary', () => {
     expect(addButtons).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Long-press & bell indicator tests
+// ---------------------------------------------------------------------------
+
+describe('AttractionList — monitor notifications', () => {
+  it('should fire onLongPress with the attraction when long-pressing a row', () => {
+    const handleLongPress = jest.fn();
+    render(
+      <AttractionList
+        attractions={attractions}
+        onLongPress={handleLongPress}
+        monitoredIds={new Set()}
+        isAttractionAdded={() => false}
+      />,
+    );
+
+    fireEvent(screen.getByTestId('attraction-mk-space-mountain'), 'onLongPress');
+    expect(handleLongPress).toHaveBeenCalledWith(operatingAttraction);
+  });
+
+  it('should show a bell icon for monitored attractions', () => {
+    render(
+      <AttractionList
+        attractions={attractions}
+        monitoredIds={new Set(['mk-space-mountain'])}
+        isAttractionAdded={() => false}
+      />,
+    );
+
+    expect(screen.getByTestId('bell-indicator-mk-space-mountain')).toBeTruthy();
+    expect(screen.queryByTestId('bell-indicator-mk-pirates')).toBeNull();
+  });
+
+  it('should not show bell icons when monitoredIds is empty', () => {
+    render(
+      <AttractionList
+        attractions={attractions}
+        monitoredIds={new Set()}
+        isAttractionAdded={() => false}
+      />,
+    );
+
+    expect(screen.queryByTestId(/^bell-indicator-/)).toBeNull();
+  });
+});

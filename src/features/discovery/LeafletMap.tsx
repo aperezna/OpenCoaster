@@ -1,7 +1,8 @@
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import type { ParkSummary } from '../../data/models/ParkSummary';
+import ErrorState from '../../components/ErrorState';
 
 // ---------------------------------------------------------------------------
 // Leaflet HTML — renders OSM tiles with marker clustering + popups
@@ -9,6 +10,9 @@ import type { ParkSummary } from '../../data/models/ParkSummary';
 
 const LEAFLET_VERSION = '1.9.4';
 const CLUSTER_VERSION = '1.5.3';
+const MAP_READY_TIMEOUT_MS = 5000;
+const MAP_FALLBACK_MESSAGE =
+  'Interactive map is unavailable right now. You can still search parks and open park details.';
 
 function buildMapHtml(
   initialRegion: {
@@ -25,11 +29,24 @@ function buildMapHtml(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@${CLUSTER_VERSION}/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@${CLUSTER_VERSION}/dist/MarkerCluster.Default.css" />
-  <script src="https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@${CLUSTER_VERSION}/dist/leaflet.markercluster.js"></script>
+  <script>
+    function postToNative(payload) {
+      if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        window.ReactNativeWebView.postMessage(JSON.stringify(payload));
+      }
+    }
+
+    function reportMapError(reason) {
+      if (window.__mapErrorReported) return;
+      window.__mapErrorReported = true;
+      postToNative({ type: 'mapError', reason: reason });
+    }
+  </script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css" onerror="reportMapError('leafletStylesheetError')" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@${CLUSTER_VERSION}/dist/MarkerCluster.css" onerror="reportMapError('clusterStylesheetError')" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@${CLUSTER_VERSION}/dist/MarkerCluster.Default.css" onerror="reportMapError('clusterDefaultStylesheetError')" />
+  <script src="https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.js" onerror="reportMapError('leafletScriptError')"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@${CLUSTER_VERSION}/dist/leaflet.markercluster.js" onerror="reportMapError('clusterScriptError')"></script>
   <style>
     * { margin: 0; padding: 0; }
     html, body, #map { width: 100%; height: 100%; }
@@ -55,104 +72,110 @@ function buildMapHtml(
 <body>
   <div id="map"></div>
   <script>
-    var map = L.map('map', {
-      zoomControl: true,
-      attributionControl: false,
-    }).setView([${initialRegion.latitude}, ${initialRegion.longitude}], 3);
-
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(map);
-
-    var clusterGroup = L.markerClusterGroup({
-      maxClusterRadius: 50,
-      spiderfyOnMaxZoom: true,
-      showCoverageOnHover: false,
-    });
-    map.addLayer(clusterGroup);
-
-    var parkIndex = {};
-    var userMarker = null;
-    var hasBounds = false;
-
-    function fitAllMarkers() {
-      if (clusterGroup.getLayers().length === 0) return;
-      var bounds = clusterGroup.getBounds();
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 6 });
-        hasBounds = true;
+    try {
+      if (typeof L === 'undefined' || typeof L.markerClusterGroup !== 'function') {
+        throw new Error('Leaflet assets unavailable');
       }
-    }
 
-    window.addEventListener('message', function(event) {
-      try {
-        var data = JSON.parse(event.data);
+      var map = L.map('map', {
+        zoomControl: true,
+        attributionControl: false,
+      }).setView([${initialRegion.latitude}, ${initialRegion.longitude}], 3);
 
-        if (data.type === 'setMarkers') {
-          clusterGroup.clearLayers();
-          parkIndex = {};
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map);
 
-          data.markers.forEach(function(park) {
-            var marker = L.marker([park.latitude, park.longitude]);
-            var popupHtml = '<div class="park-popup">' +
-              '<div class="popup-name">' + park.name + '</div>';
-            if (park.city && park.country) {
-              popupHtml += '<div class="popup-location">' + park.city + ', ' + park.country + '</div>';
-            }
-            if (park.distanceText) {
-              popupHtml += '<div class="popup-distance">' + park.distanceText + '</div>';
-            }
-            popupHtml += '<button class="popup-btn" id="view-park-' + park.id + '">' + detailButton + '</button>' +
-              '</div>';
-            marker.bindPopup(popupHtml);
+      var clusterGroup = L.markerClusterGroup({
+        maxClusterRadius: 50,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+      });
+      map.addLayer(clusterGroup);
 
-            marker.on('popupopen', function() {
-              setTimeout(function() {
-                var btn = document.getElementById('view-park-' + park.id);
-                if (btn) {
-                  btn.onclick = function() {
-                    window.ReactNativeWebView.postMessage(JSON.stringify({
-                      type: 'markerPress',
-                      parkId: park.id,
-                    }));
-                  };
-                }
-              }, 50);
+      var parkIndex = {};
+      var userMarker = null;
+      var hasBounds = false;
+
+      function fitAllMarkers() {
+        if (clusterGroup.getLayers().length === 0) return;
+        var bounds = clusterGroup.getBounds();
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 6 });
+          hasBounds = true;
+        }
+      }
+
+      window.addEventListener('message', function(event) {
+        try {
+          var data = JSON.parse(event.data);
+
+          if (data.type === 'setMarkers') {
+            clusterGroup.clearLayers();
+            parkIndex = {};
+
+            data.markers.forEach(function(park) {
+              var marker = L.marker([park.latitude, park.longitude]);
+              var popupHtml = '<div class="park-popup">' +
+                '<div class="popup-name">' + park.name + '</div>';
+              if (park.city && park.country) {
+                popupHtml += '<div class="popup-location">' + park.city + ', ' + park.country + '</div>';
+              }
+              if (park.distanceText) {
+                popupHtml += '<div class="popup-distance">' + park.distanceText + '</div>';
+              }
+              popupHtml += '<button class="popup-btn" id="view-park-' + park.id + '">' + detailButton + '</button>' +
+                '</div>';
+              marker.bindPopup(popupHtml);
+
+              marker.on('popupopen', function() {
+                setTimeout(function() {
+                  var btn = document.getElementById('view-park-' + park.id);
+                  if (btn) {
+                    btn.onclick = function() {
+                      postToNative({
+                        type: 'markerPress',
+                        parkId: park.id,
+                      });
+                    };
+                  }
+                }, 50);
+              });
+
+              clusterGroup.addLayer(marker);
+              parkIndex[park.id] = park;
             });
 
-            clusterGroup.addLayer(marker);
-            parkIndex[park.id] = park;
-          });
-
-          // Fit bounds after adding markers
-          if (data.markers.length > 0) {
-            fitAllMarkers();
+            if (data.markers.length > 0) {
+              fitAllMarkers();
+            }
           }
-        }
 
-        if (data.type === 'setUserLocation') {
-          if (userMarker) {
-            map.removeLayer(userMarker);
+          if (data.type === 'setUserLocation') {
+            if (userMarker) {
+              map.removeLayer(userMarker);
+            }
+            userMarker = L.circleMarker([data.latitude, data.longitude], {
+              radius: 8,
+              color: '#007AFF',
+              fillColor: '#4A9EFF',
+              fillOpacity: 0.8,
+              weight: 2,
+            }).addTo(map);
+
+            if (!hasBounds) {
+              map.setView([data.latitude, data.longitude], 10);
+            }
           }
-          userMarker = L.circleMarker([data.latitude, data.longitude], {
-            radius: 8,
-            color: '#007AFF',
-            fillColor: '#4A9EFF',
-            fillOpacity: 0.8,
-            weight: 2,
-          }).addTo(map);
 
-          // If no park markers yet, center on user
-          if (!hasBounds) {
-            map.setView([data.latitude, data.longitude], 10);
-          }
-        }
+        } catch(e) {}
+      });
 
-      } catch(e) {}
-    });
-
-    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'mapReady' }));
+      postToNative({ type: 'mapReady' });
+    } catch (e) {
+      reportMapError('mapInitFailed');
+    }
   </script>
 </body>
 </html>`;
@@ -224,6 +247,28 @@ export function LeafletMap({
 }: LeafletMapProps): React.JSX.Element {
   const webViewRef = useRef<WebView>(null);
   const isReadyRef = useRef(false);
+  const mapReadyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hasMapFailure, setHasMapFailure] = useState(false);
+  const [webViewAttempt, setWebViewAttempt] = useState(0);
+
+  const clearMapReadyTimeout = useCallback(() => {
+    if (mapReadyTimeoutRef.current !== null) {
+      clearTimeout(mapReadyTimeoutRef.current);
+      mapReadyTimeoutRef.current = null;
+    }
+  }, []);
+
+  const markMapFailed = useCallback(() => {
+    isReadyRef.current = false;
+    clearMapReadyTimeout();
+    setHasMapFailure(true);
+  }, [clearMapReadyTimeout]);
+
+  const handleRetry = useCallback(() => {
+    isReadyRef.current = false;
+    setHasMapFailure(false);
+    setWebViewAttempt((current) => current + 1);
+  }, []);
 
   const sendToMap = useCallback((message: Record<string, unknown>) => {
     if (!isReadyRef.current) return;
@@ -275,8 +320,11 @@ export function LeafletMap({
         const data = JSON.parse(event.nativeEvent.data);
         if (data.type === 'markerPress') {
           onMarkerPress(data.parkId);
+        } else if (data.type === 'mapError') {
+          markMapFailed();
         } else if (data.type === 'mapReady') {
           isReadyRef.current = true;
+          clearMapReadyTimeout();
           // Send initial markers + user location
           if (markers.length > 0) {
             const parkMarkers: ParkMarker[] = markers.map((p) => {
@@ -313,25 +361,51 @@ export function LeafletMap({
         // Ignore parse errors
       }
     },
-    [markers, onMarkerPress, userLocation, sendToMap],
+    [clearMapReadyTimeout, markMapFailed, markers, onMarkerPress, userLocation, sendToMap],
   );
 
   const html = buildMapHtml(initialRegion, { detailButton: detailButtonLabel });
 
+  useEffect(() => {
+    isReadyRef.current = false;
+    setHasMapFailure(false);
+    clearMapReadyTimeout();
+
+    mapReadyTimeoutRef.current = setTimeout(() => {
+      if (!isReadyRef.current) {
+        setHasMapFailure(true);
+      }
+    }, MAP_READY_TIMEOUT_MS);
+
+    return clearMapReadyTimeout;
+  }, [clearMapReadyTimeout, html, webViewAttempt]);
+
   return (
     <View style={styles.container} testID={testID}>
-      <WebView
-        ref={webViewRef}
-        style={styles.map}
-        source={{ html }}
-        originWhitelist={['*']}
-        javaScriptEnabled
-        domStorageEnabled
-        scrollEnabled={false}
-        bounces={false}
-        onMessage={handleMessage}
-        overScrollMode="never"
-      />
+      {hasMapFailure ? (
+        <ErrorState
+          testID={testID ? `${testID}-fallback` : 'leaflet-map-fallback'}
+          message={MAP_FALLBACK_MESSAGE}
+          onRetry={handleRetry}
+        />
+      ) : (
+        <WebView
+          key={webViewAttempt}
+          ref={webViewRef}
+          testID={testID ? `${testID}-webview` : 'leaflet-map-webview'}
+          style={styles.map}
+          source={{ html }}
+          originWhitelist={['*']}
+          javaScriptEnabled
+          domStorageEnabled
+          scrollEnabled={false}
+          bounces={false}
+          onMessage={handleMessage}
+          onError={markMapFailed}
+          onHttpError={markMapFailed}
+          overScrollMode="never"
+        />
+      )}
     </View>
   );
 }

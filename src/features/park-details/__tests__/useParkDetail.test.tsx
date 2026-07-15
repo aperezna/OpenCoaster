@@ -22,18 +22,22 @@ function createTestQueryClient() {
 }
 
 function TestComponent({ parkId, provider }: { parkId: string; provider: ParkDiscoveryProvider }) {
-  const { park, weather, hours, attractions, isLoading, error } = useParkDetail(parkId, provider);
+  const {
+    park,
+    weather,
+    hours,
+    attractions,
+    isLoading,
+    error,
+    weatherError,
+    hoursError,
+    attractionsError,
+  } = useParkDetail(parkId, provider);
 
   if (isLoading)
     return (
       <View testID="loading-view">
         <Text>Loading...</Text>
-      </View>
-    );
-  if (error)
-    return (
-      <View testID="error-view">
-        <Text>Error: {error.message}</Text>
       </View>
     );
 
@@ -43,6 +47,10 @@ function TestComponent({ parkId, provider }: { parkId: string; provider: ParkDis
       <Text testID="weather-temp">{weather?.temperature ?? 'null'}</Text>
       <Text testID="hours-opening">{hours?.opening ?? 'null'}</Text>
       <Text testID="attraction-count">{attractions?.length ?? 0}</Text>
+      <Text testID="park-error">{error?.message ?? 'null'}</Text>
+      <Text testID="weather-error">{weatherError?.message ?? 'null'}</Text>
+      <Text testID="hours-error">{hoursError?.message ?? 'null'}</Text>
+      <Text testID="attractions-error">{attractionsError?.message ?? 'null'}</Text>
     </View>
   );
 }
@@ -99,5 +107,27 @@ describe('useParkDetail', () => {
     renderHook('magic-kingdom', fixture);
 
     expect(screen.getByTestId('loading-view')).toBeOnTheScreen();
+  });
+
+  it('should keep park data when weather fails and surface only the weather error', async () => {
+    class WeatherFailureProvider extends FixtureParkDiscoveryProvider {
+      async getParkWeather(): Promise<never> {
+        throw new Error('Weather service offline');
+      }
+    }
+
+    renderHook('magic-kingdom', new WeatherFailureProvider());
+
+    await waitFor(() => {
+      expect(screen.getByTestId('park-name')).toHaveTextContent('Magic Kingdom');
+    });
+
+    expect(screen.getByTestId('weather-temp')).toHaveTextContent('null');
+    expect(screen.getByTestId('hours-opening')).toHaveTextContent('09:00');
+    expect(screen.getByTestId('attraction-count')).toHaveTextContent('5');
+    expect(screen.getByTestId('park-error')).toHaveTextContent('null');
+    expect(screen.getByTestId('weather-error')).toHaveTextContent('Weather service offline');
+    expect(screen.getByTestId('hours-error')).toHaveTextContent('null');
+    expect(screen.getByTestId('attractions-error')).toHaveTextContent('null');
   });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, notifyManager } from '@tanstack/react-query';
 import { DiscoveryScreen } from '../DiscoveryScreen';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
 import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscoveryProviderContext';
@@ -59,6 +59,24 @@ function renderScreen(options: RenderOptions = {}) {
 }
 
 describe('DiscoveryScreen', () => {
+  beforeAll(() => {
+    notifyManager.setNotifyFunction((callback) => {
+      act(callback);
+    });
+    notifyManager.setScheduler((callback) => {
+      callback();
+    });
+  });
+
+  afterAll(() => {
+    notifyManager.setNotifyFunction((callback) => {
+      callback();
+    });
+    notifyManager.setScheduler((callback) => {
+      setTimeout(callback, 0);
+    });
+  });
+
   /** Render and flush cascading effects (userCoords → setSearchQuery, Query promises) */
   async function renderAndFlush(options?: RenderOptions) {
     renderScreen(options);
@@ -381,6 +399,14 @@ describe('DiscoveryScreen — stale-data pill', () => {
     const queryClient = createTestQueryClient();
     const fixture = new FixtureParkDiscoveryProvider();
     const data = await fixture.searchParks({});
+    const pendingProvider = {
+      searchParks: () => new Promise<typeof data>(() => {}),
+      getParkById: fixture.getParkById.bind(fixture),
+      getParkWeather: fixture.getParkWeather.bind(fixture),
+      getParkHours: fixture.getParkHours.bind(fixture),
+      getParkAttractions: fixture.getParkAttractions.bind(fixture),
+      getUserProfile: fixture.getUserProfile.bind(fixture),
+    };
     const staleKey = [...OPENCOASTER_KEY_PREFIX, 'searchParks', {}];
 
     // Seed with 5-minute-old stale data
@@ -388,7 +414,7 @@ describe('DiscoveryScreen — stale-data pill', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <ParkDiscoveryContextProvider provider={fixture}>
+        <ParkDiscoveryContextProvider provider={pendingProvider}>
           <DiscoveryScreen
             locationService={
               new FakeLocationService('granted', { latitude: 28.4, longitude: -81.6 })
@@ -405,15 +431,22 @@ describe('DiscoveryScreen — stale-data pill', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    jest.advanceTimersByTime(0);
+    act(() => {
+      jest.advanceTimersByTime(0);
+    });
 
     // Stale-data pill should be visible with translated key
     expect(screen.getByTestId('stale-data-pill')).toBeTruthy();
     expect(screen.getByText('discovery.staleData')).toBeTruthy();
 
+    // Update with fresh data — change one field so React Query publishes a new result object.
+    const freshData = data.map((park, index) =>
+      index === 0 ? { ...park, name: `${park.name} refreshed` } : park,
+    );
+
     // Update with fresh data — setQueryData + flush React Query's setTimeout(0) notification
     act(() => {
-      queryClient.setQueryData(staleKey, [...data], { updatedAt: now });
+      queryClient.setQueryData(staleKey, freshData, { updatedAt: now });
       // React Query's notifyManager uses setTimeout(cb, 0) for observer notifications
       jest.advanceTimersByTime(0);
     });

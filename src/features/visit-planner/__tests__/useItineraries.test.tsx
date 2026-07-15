@@ -540,5 +540,27 @@ describe('useItineraries', () => {
       expect(result2.current.itineraries[0].items[0].attractionId).toBe('attr-1');
       expect(result2.current.itineraries[0].items[1].attractionId).toBe('attr-2');
     });
+
+    it('should sync itinerary changes across mounted consumers without remounting', async () => {
+      const adapter = createInMemoryAdapter();
+      const { result: first } = renderHook(() => useItineraries(adapter));
+      const { result: second } = renderHook(() => useItineraries(adapter));
+
+      await waitFor(() => {
+        expect(first.current.isLoading).toBe(false);
+        expect(second.current.isLoading).toBe(false);
+      });
+
+      act(() => {
+        first.current.createItinerary('pk-1', 'Park One');
+      });
+
+      await waitFor(() => {
+        expect(second.current.itineraries).toHaveLength(1);
+      });
+
+      expect(second.current.itineraries[0].parkId).toBe('pk-1');
+      expect(second.current.itineraries).toEqual(first.current.itineraries);
+    });
   });
 });

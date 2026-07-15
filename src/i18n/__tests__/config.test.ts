@@ -6,6 +6,26 @@ import { initI18n } from '../config';
 // ---------------------------------------------------------------------------
 
 describe('i18next config', () => {
+  it('should restore persisted language during initialization', async () => {
+    jest.resetModules();
+
+    await jest.isolateModulesAsync(async () => {
+      const asyncStorageModule = await import('@react-native-async-storage/async-storage');
+      const mockedAsyncStorage = asyncStorageModule.default as jest.Mocked<
+        typeof asyncStorageModule.default
+      >;
+      const { initI18n: isolatedInitI18n } = await import('../config');
+      const isolatedI18next = (await import('i18next')).default;
+
+      mockedAsyncStorage.getItem.mockResolvedValue('es');
+
+      await isolatedInitI18n();
+
+      expect(mockedAsyncStorage.getItem).toHaveBeenCalledWith('@opencoaster/language');
+      expect(isolatedI18next.language).toBe('es');
+    });
+  });
+
   beforeAll(async () => {
     await initI18n();
   });

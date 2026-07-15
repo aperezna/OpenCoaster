@@ -19,6 +19,7 @@ maestro test .maestro/flows/
 maestro test .maestro/flows/launch.yaml
 maestro test .maestro/flows/search.yaml
 maestro test .maestro/flows/park-detail.yaml
+maestro test .maestro/flows/notification-threshold.yaml
 
 # Run flows with a specific app
 maestro test --app-id host.exp.Exponent .maestro/flows/launch.yaml
@@ -26,11 +27,12 @@ maestro test --app-id host.exp.Exponent .maestro/flows/launch.yaml
 
 ## Flow Descriptions
 
-| Flow               | What it verifies                                                                          |
-| ------------------ | ----------------------------------------------------------------------------------------- |
-| `launch.yaml`      | App launches, dismisses onboarding if present, renders discovery screen with search input |
-| `search.yaml`      | Types a query in the search bar and verifies the input accepts text                       |
-| `park-detail.yaml` | Navigates to the Parques tab, taps a park item, and opens the detail screen               |
+| Flow                          | What it verifies                                                                          |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| `launch.yaml`                 | App launches, dismisses onboarding if present, renders discovery screen with search input |
+| `search.yaml`                 | Types a query in the search bar and verifies the input accepts text                       |
+| `park-detail.yaml`            | Navigates to the Parques tab, taps a park item, and opens the detail screen               |
+| `notification-threshold.yaml` | Long-presses Space Mountain, sets a threshold, and verifies the monitored item on Profile |
 
 ## Test IDs
 

@@ -14,6 +14,7 @@ import { OnboardingCarousel } from './src/features/onboarding/OnboardingCarousel
 import { useHasSeenOnboarding } from './src/features/onboarding/useHasSeenOnboarding';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { initI18n } from './src/i18n/config';
+import { initNotifications } from './src/data/notifications/initNotifications';
 
 // ---------------------------------------------------------------------------
 // i18next init (fire-and-forget — resolves instantly for local JSON files)
@@ -70,7 +71,7 @@ function AppInner(): React.JSX.Element {
   const [i18nReady, setI18nReady] = useState(false);
   const { status, completeOnboarding } = useHasSeenOnboarding();
 
-  // Track i18next initialization
+  // Track i18next initialization and init notifications
   useEffect(() => {
     if (i18next.isInitialized) {
       setI18nReady(true);
@@ -79,6 +80,11 @@ function AppInner(): React.JSX.Element {
         .then(() => setI18nReady(true))
         .catch(() => setI18nReady(true)); // Non-fatal — proceed with English
     }
+
+    // Fire-and-forget: init notification channels and background task
+    initNotifications().catch(() => {
+      // Non-fatal — app works without background notifications
+    });
   }, []);
 
   // Hide the native splash once i18n and onboarding are resolved (app is ready)

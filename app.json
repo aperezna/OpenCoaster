@@ -33,6 +33,13 @@
           "locationWhenInUsePermission": "OpenCoaster needs your location to show nearby parks."
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff"
+        }
+      ],
       "@sentry/react-native",
       "@react-native-community/datetimepicker"
     ]

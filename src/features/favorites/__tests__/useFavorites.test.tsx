@@ -206,5 +206,26 @@ describe('useFavorites', () => {
       expect(result.current.favorites).toHaveLength(1);
       expect(result.current.favorites[0].parkId).toBe('p2');
     });
+
+    it('should sync updates across mounted consumers without remounting', async () => {
+      const adapter = createInMemoryAdapter();
+      const { result: first } = renderHook(() => useFavorites(adapter));
+      const { result: second } = renderHook(() => useFavorites(adapter));
+
+      await waitFor(() => {
+        expect(first.current.isLoading).toBe(false);
+        expect(second.current.isLoading).toBe(false);
+      });
+
+      act(() => {
+        first.current.toggleFavorite('p1', 'Park One');
+      });
+
+      await waitFor(() => {
+        expect(second.current.isFavorite('p1')).toBe(true);
+      });
+
+      expect(second.current.favorites).toEqual(first.current.favorites);
+    });
   });
 });

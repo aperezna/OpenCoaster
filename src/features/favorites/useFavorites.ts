@@ -1,9 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { StorageAdapter } from '../../data/cache/storageAdapter';
 import { AsyncStorageAdapter } from '../../data/cache/asyncStorageAdapter';
+import {
+  createSharedJsonStorageStore,
+  useSharedJsonStorageState,
+} from '../../data/cache/sharedJsonStorageStore';
 import type { FavoritePark } from '../../data/models/FavoritePark';
 
 const FAVORITES_KEY = 'opencoaster:favorites';
+const defaultAdapter = new AsyncStorageAdapter();
+const getFavoritesStore = createSharedJsonStorageStore<FavoritePark[]>(FAVORITES_KEY, []);
 
 interface UseFavoritesReturn {
   favorites: FavoritePark[];
@@ -13,43 +19,9 @@ interface UseFavoritesReturn {
   isLoading: boolean;
 }
 
-export function useFavorites(
-  adapter: StorageAdapter = new AsyncStorageAdapter(),
-): UseFavoritesReturn {
-  const [favorites, setFavorites] = useState<FavoritePark[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    adapter
-      .getItem(FAVORITES_KEY)
-      .then((data) => {
-        if (cancelled) {
-          return;
-        }
-        if (data) {
-          try {
-            setFavorites(JSON.parse(data) as FavoritePark[]);
-          } catch {
-            setFavorites([]);
-          }
-        } else {
-          setFavorites([]);
-        }
-        setIsLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFavorites([]);
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [adapter]);
+export function useFavorites(adapter: StorageAdapter = defaultAdapter): UseFavoritesReturn {
+  const store = getFavoritesStore(adapter);
+  const { value: favorites, isLoading } = useSharedJsonStorageState(store);
 
   const isFavorite = useCallback(
     (parkId: string): boolean => {
@@ -60,26 +32,24 @@ export function useFavorites(
 
   const toggleFavorite = useCallback(
     (parkId: string, parkName: string) => {
-      setFavorites((prev) => {
-        const existing = prev.find((f) => f.parkId === parkId);
-        let next: FavoritePark[];
-        if (existing) {
-          next = prev.filter((f) => f.parkId !== parkId);
-        } else {
-          next = [...prev, { parkId, parkName, addedAt: new Date().toISOString() }];
-        }
-        // Persist asynchronously — fire and forget with catch
-        adapter.setItem(FAVORITES_KEY, JSON.stringify(next)).catch(() => {});
-        return next;
-      });
+      void store
+        .updateValue((prev) => {
+          const existing = prev.find((favorite) => favorite.parkId === parkId);
+
+          if (existing) {
+            return prev.filter((favorite) => favorite.parkId !== parkId);
+          }
+
+          return [...prev, { parkId, parkName, addedAt: new Date().toISOString() }];
+        })
+        .catch(() => {});
     },
-    [adapter],
+    [store],
   );
 
   const clearFavorites = useCallback(async () => {
-    setFavorites([]);
-    await adapter.setItem(FAVORITES_KEY, JSON.stringify([]));
-  }, [adapter]);
+    await store.setValue([]);
+  }, [store]);
 
   return { favorites, isFavorite, toggleFavorite, clearFavorites, isLoading };
 }

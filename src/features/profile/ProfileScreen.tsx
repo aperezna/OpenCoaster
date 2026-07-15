@@ -15,12 +15,14 @@ import { useNavigation } from '@react-navigation/native';
 import { useParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 import { useFavorites } from '../favorites/useFavorites';
 import { useItineraries } from '../visit-planner/useItineraries';
+import { useNotificationPreferences } from '../notifications/useNotificationPreferences';
 import { ProfileSkeleton } from '../../components/Skeleton';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../i18n/useLanguage';
 import type { UserProfile } from '../../data/models/UserProfile';
 import type { FavoritePark } from '../../data/models/FavoritePark';
 import type { Itinerary } from '../../data/models/Itinerary';
+import type { NotificationPreference } from '../notifications/notificationTypes';
 import type { ThemeColors } from '../../theme/colors';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { RootTabParamList } from '../../navigation/RootNavigator';
@@ -41,14 +43,84 @@ export function ProfileScreen(): React.JSX.Element {
   const provider = useParkDiscoveryProvider();
   const { favorites, clearFavorites } = useFavorites();
   const { itineraries } = useItineraries();
+  const {
+    getMonitored,
+    removeThreshold,
+    isLoading: notificationsLoading,
+  } = useNotificationPreferences();
   const navigation = useNavigation<ProfileNavProp>();
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [parkNames, setParkNames] = useState<Record<string, string>>({});
+
+  const monitored = getMonitored();
+  const monitoredSignature = JSON.stringify(
+    monitored.map(({ parkId, attractionId, attractionName, thresholdMin }) => ({
+      parkId,
+      attractionId,
+      attractionName,
+      thresholdMin,
+    })),
+  );
+
+  const monitoredByPark = useMemo(() => {
+    return monitored.reduce<
+      Array<{
+        parkId: string;
+        parkName: string;
+        entries: NotificationPreference[];
+      }>
+    >((groups, entry) => {
+      const existingGroup = groups.find((group) => group.parkId === entry.parkId);
+      if (existingGroup) {
+        existingGroup.entries.push(entry);
+        return groups;
+      }
+
+      groups.push({
+        parkId: entry.parkId,
+        parkName: parkNames[entry.parkId] ?? entry.parkId,
+        entries: [entry],
+      });
+      return groups;
+    }, []);
+  }, [monitoredSignature, parkNames]);
 
   useEffect(() => {
     provider.getUserProfile().then(setProfile);
   }, [provider]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadParkNames() {
+      if (monitored.length === 0) {
+        if (isActive) {
+          setParkNames({});
+        }
+        return;
+      }
+
+      const ids = Array.from(new Set(monitored.map((entry) => entry.parkId)));
+      const pairs = await Promise.all(
+        ids.map(async (parkId) => {
+          const park = await provider.getParkById(parkId);
+          return [parkId, park?.name ?? parkId] as const;
+        }),
+      );
+
+      if (isActive) {
+        setParkNames(Object.fromEntries(pairs));
+      }
+    }
+
+    void loadParkNames();
+
+    return () => {
+      isActive = false;
+    };
+  }, [provider, monitoredSignature]);
 
   const handleFavoritePress = useCallback(
     (item: FavoritePark) => {
@@ -151,6 +223,41 @@ export function ProfileScreen(): React.JSX.Element {
               </TouchableOpacity>
             )}
           />
+        )}
+      </View>
+
+      <View style={styles.monitoredSection}>
+        <Text style={styles.monitoredTitle}>{t('profile.monitoredAttractions')}</Text>
+        {!notificationsLoading && monitoredByPark.length === 0 ? (
+          <Text style={styles.emptyMonitored}>{t('profile.noMonitoredAttractions')}</Text>
+        ) : (
+          monitoredByPark.map((group) => (
+            <View key={group.parkId} style={styles.monitoredGroup}>
+              <Text style={styles.monitoredParkName}>{group.parkName}</Text>
+              {group.entries.map((entry) => (
+                <View key={entry.attractionId} style={styles.monitoredItem}>
+                  <View style={styles.monitoredInfo}>
+                    <Text style={styles.monitoredAttractionName}>{entry.attractionName}</Text>
+                    <Text
+                      testID={`monitored-threshold-${entry.attractionId}`}
+                      style={styles.monitoredThreshold}
+                    >
+                      {entry.thresholdMin} min
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    testID={`monitored-remove-${entry.attractionId}`}
+                    style={styles.monitoredRemoveButton}
+                    onPress={() => removeThreshold(entry.parkId, entry.attractionId)}
+                  >
+                    <Text style={styles.monitoredRemoveText}>
+                      {t('notifications.removeMonitoring')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          ))
         )}
       </View>
 
@@ -359,6 +466,69 @@ function createStyles(colors: ThemeColors) {
       fontSize: 13,
       color: colors.textSecondary,
       marginTop: 4,
+    },
+    monitoredSection: {
+      width: '100%',
+      marginTop: 24,
+      paddingHorizontal: 16,
+    },
+    monitoredTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    emptyMonitored: {
+      fontSize: 14,
+      color: colors.textTertiary,
+      textAlign: 'center',
+      paddingVertical: 20,
+    },
+    monitoredGroup: {
+      marginBottom: 16,
+    },
+    monitoredParkName: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    monitoredItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginBottom: 8,
+    },
+    monitoredInfo: {
+      flex: 1,
+      marginRight: 12,
+    },
+    monitoredAttractionName: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+    },
+    monitoredThreshold: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    monitoredRemoveButton: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 6,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    monitoredRemoveText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.text,
     },
     modalOverlay: {
       flex: 1,

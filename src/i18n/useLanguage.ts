@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18next from 'i18next';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import {
+  getCurrentLanguage,
+  getPersistedLanguage,
+  isSupportedLanguage,
+  LANGUAGE_STORAGE_KEY,
+} from './config';
 
 type SupportedLanguage = 'en' | 'es';
-
-const SUPPORTED_LANGUAGES: SupportedLanguage[] = ['en', 'es'];
-const STORAGE_KEY = '@opencoaster/language';
 
 // ---------------------------------------------------------------------------
 // useLanguage hook
@@ -22,7 +21,7 @@ const STORAGE_KEY = '@opencoaster/language';
  * Only 'en' and 'es' are valid values; unknown values are ignored.
  */
 export function useLanguage() {
-  const [language, setLanguageState] = useState<SupportedLanguage>('en');
+  const [language, setLanguageState] = useState<SupportedLanguage>(getCurrentLanguage);
   const [isReady, setIsReady] = useState(false);
 
   // Load persisted language on mount
@@ -31,13 +30,22 @@ export function useLanguage() {
 
     async function loadLanguage() {
       try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (!cancelled && stored && isValidLanguage(stored)) {
-          await i18next.changeLanguage(stored);
-          setLanguageState(stored);
+        const storedLanguage = await getPersistedLanguage();
+
+        if (cancelled) {
+          return;
         }
+
+        if (storedLanguage && storedLanguage !== i18next.language) {
+          await i18next.changeLanguage(storedLanguage);
+        }
+
+        setLanguageState(storedLanguage ?? getCurrentLanguage());
       } catch {
         // Ignore storage errors — default to 'en'
+        if (!cancelled) {
+          setLanguageState(getCurrentLanguage());
+        }
       } finally {
         if (!cancelled) {
           setIsReady(true);
@@ -58,7 +66,7 @@ export function useLanguage() {
       return;
     }
 
-    await AsyncStorage.setItem(STORAGE_KEY, lang);
+    await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
     await i18next.changeLanguage(lang);
     setLanguageState(lang);
   }, []);
@@ -71,5 +79,5 @@ export function useLanguage() {
 // ---------------------------------------------------------------------------
 
 function isValidLanguage(lang: string): lang is SupportedLanguage {
-  return SUPPORTED_LANGUAGES.includes(lang as SupportedLanguage);
+  return isSupportedLanguage(lang);
 }

@@ -1,0 +1,48 @@
+# notification-threshold.yaml
+# Set a monitored attraction threshold from park detail and verify it appears on Profile.
+
+appId: host.exp.Exponent
+---
+- launchApp:
+    appId: "host.exp.Exponent"
+    clearState: true
+- waitForAnimationToEnd
+- tapOn:
+    id: "onboarding-skip-button"
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    text: "Parques"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "parks-list-screen"
+- tapOn:
+    id: "park-item-.*"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "park-detail-screen"
+- longPressOn:
+    id: "attraction-mk-space-mountain"
+- assertVisible:
+    id: "threshold-confirm"
+- tapOn:
+    id: "threshold-confirm"
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: "Permitir"
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    text: "Usuario"
+    optional: true
+- tapOn:
+    text: "Profile"
+    optional: true
+- waitForAnimationToEnd
+- assertVisible:
+    id: "profile-screen"
+- assertVisible: "Space Mountain"
+- assertVisible:
+    id: "monitored-threshold-mk-space-mountain"

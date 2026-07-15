@@ -1,8 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { StorageAdapter } from '../../data/cache/storageAdapter';
 import { AsyncStorageAdapter } from '../../data/cache/asyncStorageAdapter';
+import {
+  createSharedJsonStorageStore,
+  useSharedJsonStorageState,
+} from '../../data/cache/sharedJsonStorageStore';
 import type { Itinerary, ItineraryItem } from '../../data/models/Itinerary';
 import { ITINERARIES_KEY } from '../../data/models/Itinerary';
+
+const defaultAdapter = new AsyncStorageAdapter();
+const getItinerariesStore = createSharedJsonStorageStore<Itinerary[]>(ITINERARIES_KEY, []);
 
 interface UseItinerariesReturn {
   itineraries: Itinerary[];
@@ -21,51 +28,9 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-export function useItineraries(
-  adapter: StorageAdapter = new AsyncStorageAdapter(),
-): UseItinerariesReturn {
-  const [itineraries, setItineraries] = useState<Itinerary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    adapter
-      .getItem(ITINERARIES_KEY)
-      .then((data) => {
-        if (cancelled) {
-          return;
-        }
-        if (data) {
-          try {
-            setItineraries(JSON.parse(data) as Itinerary[]);
-          } catch {
-            setItineraries([]);
-          }
-        } else {
-          setItineraries([]);
-        }
-        setIsLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setItineraries([]);
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [adapter]);
-
-  const persist = useCallback(
-    (next: Itinerary[]) => {
-      adapter.setItem(ITINERARIES_KEY, JSON.stringify(next)).catch(() => {});
-      return next;
-    },
-    [adapter],
-  );
+export function useItineraries(adapter: StorageAdapter = defaultAdapter): UseItinerariesReturn {
+  const store = getItinerariesStore(adapter);
+  const { value: itineraries, isLoading } = useSharedJsonStorageState(store);
 
   const createItinerary = useCallback(
     (parkId: string, parkName: string, date?: string) => {
@@ -79,138 +44,150 @@ export function useItineraries(
         createdAt: now,
         updatedAt: now,
       };
-      setItineraries((prev) => persist([...prev, newItinerary]));
+      void store.updateValue((prev) => [...prev, newItinerary]).catch(() => {});
     },
-    [persist],
+    [store],
   );
 
   const deleteItinerary = useCallback(
     (id: string) => {
-      setItineraries((prev) => persist(prev.filter((i) => i.id !== id)));
+      void store
+        .updateValue((prev) => prev.filter((itinerary) => itinerary.id !== id))
+        .catch(() => {});
     },
-    [persist],
+    [store],
   );
 
   const updateDate = useCallback(
     (id: string, date?: string) => {
-      setItineraries((prev) =>
-        persist(
-          prev.map((i) => (i.id === id ? { ...i, date, updatedAt: new Date().toISOString() } : i)),
-        ),
-      );
+      void store
+        .updateValue((prev) =>
+          prev.map((itinerary) =>
+            itinerary.id === id
+              ? { ...itinerary, date, updatedAt: new Date().toISOString() }
+              : itinerary,
+          ),
+        )
+        .catch(() => {});
     },
-    [persist],
+    [store],
   );
 
   const addAttraction = useCallback(
     (itineraryId: string, attraction: { id: string; name: string }) => {
-      setItineraries((prev) =>
-        persist(
-          prev.map((it) => {
-            if (it.id !== itineraryId) {
-              return it;
+      void store
+        .updateValue((prev) =>
+          prev.map((itinerary) => {
+            if (itinerary.id !== itineraryId) {
+              return itinerary;
             }
+
             const newItem: ItineraryItem = {
               id: generateId(),
               attractionId: attraction.id,
               name: attraction.name,
-              order: it.items.length,
+              order: itinerary.items.length,
             };
+
             return {
-              ...it,
-              items: [...it.items, newItem],
+              ...itinerary,
+              items: [...itinerary.items, newItem],
               updatedAt: new Date().toISOString(),
             };
           }),
-        ),
-      );
+        )
+        .catch(() => {});
     },
-    [persist],
+    [store],
   );
 
   const removeAttraction = useCallback(
     (itineraryId: string, attractionId: string) => {
-      setItineraries((prev) =>
-        persist(
-          prev.map((it) => {
-            if (it.id !== itineraryId) {
-              return it;
+      void store
+        .updateValue((prev) =>
+          prev.map((itinerary) => {
+            if (itinerary.id !== itineraryId) {
+              return itinerary;
             }
-            const filtered = it.items
+
+            const filtered = itinerary.items
               .filter((item) => item.attractionId !== attractionId)
-              .map((item, idx) => ({ ...item, order: idx }));
+              .map((item, index) => ({ ...item, order: index }));
+
             return {
-              ...it,
+              ...itinerary,
               items: filtered,
               updatedAt: new Date().toISOString(),
             };
           }),
-        ),
-      );
+        )
+        .catch(() => {});
     },
-    [persist],
+    [store],
   );
 
   const moveItemUp = useCallback(
     (itineraryId: string, attractionId: string) => {
-      setItineraries((prev) =>
-        persist(
-          prev.map((it) => {
-            if (it.id !== itineraryId) {
-              return it;
+      void store
+        .updateValue((prev) =>
+          prev.map((itinerary) => {
+            if (itinerary.id !== itineraryId) {
+              return itinerary;
             }
-            const items = [...it.items];
-            const idx = items.findIndex((item) => item.attractionId === attractionId);
-            if (idx <= 0) {
-              return it;
+
+            const items = [...itinerary.items];
+            const index = items.findIndex((item) => item.attractionId === attractionId);
+            if (index <= 0) {
+              return itinerary;
             }
-            // Swap order values
-            const temp = items[idx].order;
-            items[idx] = { ...items[idx], order: items[idx - 1].order };
-            items[idx - 1] = { ...items[idx - 1], order: temp };
-            // Re-sort by order so the array matches the new positions
-            items.sort((a, b) => a.order - b.order);
+
+            const swappedOrder = items[index].order;
+            items[index] = { ...items[index], order: items[index - 1].order };
+            items[index - 1] = { ...items[index - 1], order: swappedOrder };
+            items.sort((left, right) => left.order - right.order);
+
             return {
-              ...it,
+              ...itinerary,
               items,
               updatedAt: new Date().toISOString(),
             };
           }),
-        ),
-      );
+        )
+        .catch(() => {});
     },
-    [persist],
+    [store],
   );
 
   const moveItemDown = useCallback(
     (itineraryId: string, attractionId: string) => {
-      setItineraries((prev) =>
-        persist(
-          prev.map((it) => {
-            if (it.id !== itineraryId) {
-              return it;
+      void store
+        .updateValue((prev) =>
+          prev.map((itinerary) => {
+            if (itinerary.id !== itineraryId) {
+              return itinerary;
             }
-            const items = [...it.items];
-            const idx = items.findIndex((item) => item.attractionId === attractionId);
-            if (idx < 0 || idx >= items.length - 1) {
-              return it;
+
+            const items = [...itinerary.items];
+            const index = items.findIndex((item) => item.attractionId === attractionId);
+            if (index < 0 || index >= items.length - 1) {
+              return itinerary;
             }
-            // Swap order values
-            const temp = items[idx].order;
-            items[idx] = { ...items[idx], order: items[idx + 1].order };
-            items[idx + 1] = { ...items[idx + 1], order: temp };
-            // Re-sort by order so the array matches the new positions
-            items.sort((a, b) => a.order - b.order);
+
+            const swappedOrder = items[index].order;
+            items[index] = { ...items[index], order: items[index + 1].order };
+            items[index + 1] = { ...items[index + 1], order: swappedOrder };
+            items.sort((left, right) => left.order - right.order);
+
             return {
-              ...it,
+              ...itinerary,
               items,
               updatedAt: new Date().toISOString(),
             };
           }),
-        ),
-      );
+        )
+        .catch(() => {});
     },
-    [persist],
+    [store],
   );
 
   const isAttractionInItinerary = useCallback(

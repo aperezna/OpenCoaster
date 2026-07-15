@@ -21,6 +21,9 @@ export function useParkDetail(
   isAttractionsLoading: boolean;
   isFetching: boolean;
   error: Error | null;
+  weatherError: Error | null;
+  hoursError: Error | null;
+  attractionsError: Error | null;
   refetchAll: () => void;
 } {
   const results = useQueries({
@@ -48,7 +51,10 @@ export function useParkDetail(
 
   const isLoading = results.some((r) => r.isLoading);
   const isFetching = results.some((r) => r.isFetching);
-  const firstError = results.find((r) => r.error);
+  const parkError = parkQuery.error instanceof Error ? parkQuery.error : null;
+  const weatherError = weatherQuery.error instanceof Error ? weatherQuery.error : null;
+  const hoursError = hoursQuery.error instanceof Error ? hoursQuery.error : null;
+  const attractionsError = attractionsQuery.error instanceof Error ? attractionsQuery.error : null;
 
   return {
     park: parkQuery.data ?? null,
@@ -61,7 +67,10 @@ export function useParkDetail(
     isHoursLoading: hoursQuery.isLoading,
     isAttractionsLoading: attractionsQuery.isLoading,
     isFetching,
-    error: firstError?.error instanceof Error ? (firstError.error as Error) : null,
+    error: parkError,
+    weatherError,
+    hoursError,
+    attractionsError,
     refetchAll: () => {
       results.forEach((r) => {
         r.refetch();

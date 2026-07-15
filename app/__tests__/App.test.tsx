@@ -3,6 +3,28 @@ import { render, screen } from '@testing-library/react-native';
 import App from '../../App';
 import { SyncPromise } from '../../test-utils/syncThenable';
 
+jest.mock('../../src/navigation/RootNavigator', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    RootNavigator: () => React.createElement(View, { testID: 'discovery-screen' }),
+  };
+});
+
+jest.mock('../../src/data/notifications/initNotifications', () => ({
+  initNotifications: jest.fn(() => Promise.resolve()),
+}));
+
+jest.mock('../../src/features/discovery/useSearchHistory', () => ({
+  useSearchHistory: () => ({
+    queries: [],
+    add: jest.fn(),
+    clear: jest.fn(),
+    isLoading: false,
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------

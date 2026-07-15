@@ -280,6 +280,34 @@ describe('ThemeParksWikiProvider — searchParks', () => {
     expect(results[0].id).toBe('magic-kingdom');
   });
 
+  it('should filter parks by city (case-insensitive)', async () => {
+    global.fetch = buildFetchMock([
+      { url: '/destinations', response: mockDestinationsResponse },
+      { url: '/entity/dest-wdw/children', response: mockWdwChildrenResponse },
+      { url: '/entity/dest-dlp/children', response: mockDlpChildrenResponse },
+    ]);
+
+    const provider = createProvider();
+    const results = await provider.searchParks({ city: 'orlando' });
+
+    expect(results).toHaveLength(2);
+    expect(results.every((park) => park.city === 'Orlando')).toBe(true);
+  });
+
+  it('should filter parks by country (case-insensitive)', async () => {
+    global.fetch = buildFetchMock([
+      { url: '/destinations', response: mockDestinationsResponse },
+      { url: '/entity/dest-wdw/children', response: mockWdwChildrenResponse },
+      { url: '/entity/dest-dlp/children', response: mockDlpChildrenResponse },
+    ]);
+
+    const provider = createProvider();
+    const results = await provider.searchParks({ country: 'fr' });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].id).toBe('disneyland-paris');
+  });
+
   it('should filter parks by proximity', async () => {
     global.fetch = buildFetchMock([
       { url: '/destinations', response: mockDestinationsResponse },
@@ -500,13 +528,12 @@ describe('ThemeParksWikiProvider — getParkHours', () => {
     expect(result).toBeNull();
   });
 
-  it('should return null on API error', async () => {
+  it('should throw on API error so callers can render a degraded hours state', async () => {
     global.fetch = buildFetchMock([{ url: '/entity/error/schedule', ok: false, status: 500 }]);
 
     const provider = createProvider();
-    const result = await provider.getParkHours('error');
 
-    expect(result).toBeNull();
+    await expect(provider.getParkHours('error')).rejects.toThrow('ThemeParks.wiki API error');
   });
 });
 
@@ -585,29 +612,27 @@ describe('ThemeParksWikiProvider — getParkWeather', () => {
     expect(result).toBeNull();
   });
 
-  it('should return null on API error', async () => {
+  it('should throw on API error so callers can render a degraded weather state', async () => {
     global.fetch = buildFetchMock([{ url: '/entity/error', ok: false, status: 500 }]);
 
     const provider = createProvider();
-    const result = await provider.getParkWeather('error');
 
-    expect(result).toBeNull();
+    await expect(provider.getParkWeather('error')).rejects.toThrow('ThemeParks.wiki API error');
   });
 });
 
 describe('ThemeParksWikiProvider — error handling', () => {
-  it('should handle network errors gracefully', async () => {
+  it('should keep park lookup graceful while surfacing secondary network errors', async () => {
     global.fetch = jest.fn().mockRejectedValue(new Error('Network request failed'));
 
     const provider = createProvider();
 
-    // Methods with try/catch should return null
     await expect(provider.getParkById('any')).resolves.toBeNull();
-    await expect(provider.getParkHours('any')).resolves.toBeNull();
-    await expect(provider.getParkWeather('any')).resolves.toBeNull();
+    await expect(provider.getParkHours('any')).rejects.toThrow('Network request failed');
+    await expect(provider.getParkWeather('any')).rejects.toThrow('Network request failed');
   });
 
-  it('should handle non-ok responses gracefully', async () => {
+  it('should keep park lookup graceful while surfacing secondary HTTP errors', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,
       status: 500,
@@ -617,8 +642,8 @@ describe('ThemeParksWikiProvider — error handling', () => {
     const provider = createProvider();
 
     await expect(provider.getParkById('any')).resolves.toBeNull();
-    await expect(provider.getParkHours('any')).resolves.toBeNull();
-    await expect(provider.getParkWeather('any')).resolves.toBeNull();
+    await expect(provider.getParkHours('any')).rejects.toThrow('ThemeParks.wiki API error');
+    await expect(provider.getParkWeather('any')).rejects.toThrow('ThemeParks.wiki API error');
   });
 
   it('should pass abort signal to fetch for timeout support', async () => {

@@ -54,6 +54,42 @@ jest.mock('../../visit-planner/useItineraries', () => ({
   }),
 }));
 
+type MockMonitoredEntry = {
+  parkId: string;
+  attractionId: string;
+  attractionName: string;
+  thresholdMin: number;
+};
+
+let mockMonitoredEntries: MockMonitoredEntry[] = [];
+const mockRemoveThreshold = jest.fn();
+
+jest.mock('../../notifications/useNotificationPreferences', () => {
+  const React = require('react');
+
+  return {
+    useNotificationPreferences: () => {
+      const [entries, setEntries] = React.useState(mockMonitoredEntries);
+
+      return {
+        preferences: {},
+        isLoading: false,
+        setThreshold: jest.fn(),
+        getMonitored: () => entries,
+        removeThreshold: async (parkId: string, attractionId: string) => {
+          mockRemoveThreshold(parkId, attractionId);
+          setEntries((current: MockMonitoredEntry[]) =>
+            current.filter(
+              (entry: MockMonitoredEntry) =>
+                !(entry.parkId === parkId && entry.attractionId === attractionId),
+            ),
+          );
+        },
+      };
+    },
+  };
+});
+
 // ---------------------------------------------------------------------------
 // useLanguage mock
 // ---------------------------------------------------------------------------
@@ -106,6 +142,8 @@ describe('ProfileScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFavorites = [];
+    mockItineraries = [];
+    mockMonitoredEntries = [];
     mockIsFavorite = () => false;
     mockToggleFavorite = () => {};
     mockLanguage = 'en';
@@ -337,6 +375,71 @@ describe('ProfileScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Parques', {
       screen: 'ItineraryDetail',
       params: { itineraryId: 'itin-1' },
+    });
+  });
+
+  it('should render monitored attractions grouped by park with thresholds', async () => {
+    mockMonitoredEntries = [
+      {
+        parkId: 'magic-kingdom',
+        attractionId: 'mk-space-mountain',
+        attractionName: 'Space Mountain',
+        thresholdMin: 30,
+      },
+      {
+        parkId: 'disneyland-paris',
+        attractionId: 'dlp-big-thunder',
+        attractionName: 'Big Thunder Mountain',
+        thresholdMin: 20,
+      },
+    ];
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText('profile.monitoredAttractions')).toBeTruthy();
+    });
+
+    expect(screen.getByText('Magic Kingdom')).toBeTruthy();
+    expect(screen.getByText('Disneyland Park')).toBeTruthy();
+    expect(screen.getByText('Space Mountain')).toBeTruthy();
+    expect(screen.getByText('Big Thunder Mountain')).toBeTruthy();
+    expect(screen.getByTestId('monitored-threshold-mk-space-mountain')).toHaveTextContent('30 min');
+    expect(screen.getByTestId('monitored-threshold-dlp-big-thunder')).toHaveTextContent('20 min');
+  });
+
+  it('should remove a monitored attraction from the section', async () => {
+    mockMonitoredEntries = [
+      {
+        parkId: 'magic-kingdom',
+        attractionId: 'mk-space-mountain',
+        attractionName: 'Space Mountain',
+        thresholdMin: 30,
+      },
+    ];
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('monitored-remove-mk-space-mountain')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId('monitored-remove-mk-space-mountain'));
+
+    await waitFor(() => {
+      expect(mockRemoveThreshold).toHaveBeenCalledWith('magic-kingdom', 'mk-space-mountain');
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Space Mountain')).toBeNull();
+    });
+  });
+
+  it('should show the monitored attractions empty state when no thresholds exist', async () => {
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText('profile.noMonitoredAttractions')).toBeTruthy();
     });
   });
 });

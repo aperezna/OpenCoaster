@@ -57,6 +57,19 @@ describe('useLanguage', () => {
     expect(result.current.language).toBe('es');
   });
 
+  it('should start from the current i18next language during bootstrap handoff', async () => {
+    mockedAsyncStorage.getItem.mockResolvedValue('es');
+    await i18next.changeLanguage('es');
+
+    const { result } = renderHook(() => useLanguage());
+
+    expect(result.current.language).toBe('es');
+
+    await waitFor(() => {
+      expect(result.current.isReady).toBe(true);
+    });
+  });
+
   it('should persist language change to AsyncStorage via setLanguage', async () => {
     mockedAsyncStorage.getItem.mockResolvedValue(null);
     mockedAsyncStorage.setItem.mockResolvedValue(undefined);

@@ -10,6 +10,18 @@ function mockElement(type) {
   };
 }
 
+const ScrollViewComponent = React.forwardRef(function (props, ref) {
+  const { children, style, ...rest } = props || {};
+
+  React.useImperativeHandle(ref, function () {
+    return {
+      scrollTo: function () {},
+    };
+  });
+
+  return React.createElement('ScrollView', rest, children);
+});
+
 const AnimatedValue = function (val) {
   this._value = val;
 };
@@ -48,7 +60,7 @@ const FlatListComponent = React.forwardRef(function (props, ref) {
 module.exports = {
   View: mockElement('View'),
   Text: mockElement('Text'),
-  ScrollView: mockElement('ScrollView'),
+  ScrollView: ScrollViewComponent,
   Image: mockElement('Image'),
   ActivityIndicator: mockElement('ActivityIndicator'),
   FlatList: FlatListComponent,
