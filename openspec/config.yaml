@@ -41,7 +41,7 @@ testing:
       tool: '@testing-library/react-native'
     e2e:
       available: true
-      tool: Maestro (3 flows: launch, park-detail, search)
+      tool: 'Maestro (3 flows: launch, park-detail, search)'
   quality:
     linter:
       available: true
@@ -66,8 +66,9 @@ rules:
     - Group by phase and keep each task completable in one session.
     - Forecast PR size against the 800-line review budget.
   apply:
-    - Follow Red-Green-Refactor once the test toolchain is bootstrapped.
-    - Keep secrets out of source control and use local env files only.
+    guidelines:
+      - Follow Red-Green-Refactor once the test toolchain is bootstrapped.
+      - Keep secrets out of source control and use local env files only.
     tdd: true
     test_command: npx jest
   verify:

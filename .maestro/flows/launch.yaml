@@ -4,15 +4,15 @@
 appId: host.exp.Exponent
 ---
 - launchApp:
-    appId: "host.exp.Exponent"
+    appId: 'host.exp.Exponent'
     clearState: true
 - waitForAnimationToEnd
 # Dismiss onboarding carousel if visible on first launch
 - tapOn:
-    id: "onboarding-skip-button"
+    id: 'onboarding-skip-button'
     optional: true
 - waitForAnimationToEnd
 - assertVisible:
-    id: "discovery-screen"
+    id: 'discovery-screen'
 - assertVisible:
-    id: "search-name-input"
+    id: 'search-name-input'

@@ -4,19 +4,19 @@
 appId: host.exp.Exponent
 ---
 - launchApp:
-    appId: "host.exp.Exponent"
+    appId: 'host.exp.Exponent'
     clearState: true
 - waitForAnimationToEnd
 # Dismiss onboarding if present
 - tapOn:
-    id: "onboarding-skip-button"
+    id: 'onboarding-skip-button'
     optional: true
 - waitForAnimationToEnd
 - assertVisible:
-    id: "discovery-screen"
+    id: 'discovery-screen'
 - tapOn:
-    id: "search-name-input"
-- inputText: "Magic"
+    id: 'search-name-input'
+- inputText: 'Magic'
 - waitForAnimationToEnd
 - assertVisible:
-    id: "search-name-input"
+    id: 'search-name-input'

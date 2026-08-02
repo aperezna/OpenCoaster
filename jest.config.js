@@ -25,7 +25,8 @@ module.exports = {
     '^expo-location$': '<rootDir>/src/data/location/__tests__/FakeLocationService.ts',
     '^react-native-maps$': '<rootDir>/__mocks__/react-native-maps.ts',
     '^react-native-webview$': '<rootDir>/__mocks__/react-native-webview.js',
-    '^@react-native-async-storage/async-storage$': '<rootDir>/__mocks__/@react-native-async-storage/async-storage.ts',
+    '^@react-native-async-storage/async-storage$':
+      '<rootDir>/__mocks__/@react-native-async-storage/async-storage.ts',
     '^expo-task-manager$': '<rootDir>/__mocks__/expo-task-manager.ts',
     '^expo-background-fetch$': '<rootDir>/__mocks__/expo-background-fetch.ts',
     '^expo-notifications$': '<rootDir>/__mocks__/expo-notifications.ts',

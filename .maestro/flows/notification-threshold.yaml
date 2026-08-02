@@ -4,45 +4,45 @@
 appId: host.exp.Exponent
 ---
 - launchApp:
-    appId: "host.exp.Exponent"
+    appId: 'host.exp.Exponent'
     clearState: true
 - waitForAnimationToEnd
 - tapOn:
-    id: "onboarding-skip-button"
+    id: 'onboarding-skip-button'
     optional: true
 - waitForAnimationToEnd
 - tapOn:
-    text: "Parques"
+    text: 'Parques'
 - waitForAnimationToEnd
 - assertVisible:
-    id: "parks-list-screen"
+    id: 'parks-list-screen'
 - tapOn:
-    id: "park-item-.*"
+    id: 'park-item-.*'
 - waitForAnimationToEnd
 - assertVisible:
-    id: "park-detail-screen"
+    id: 'park-detail-screen'
 - longPressOn:
-    id: "attraction-mk-space-mountain"
+    id: 'attraction-mk-space-mountain'
 - assertVisible:
-    id: "threshold-confirm"
+    id: 'threshold-confirm'
 - tapOn:
-    id: "threshold-confirm"
+    id: 'threshold-confirm'
 - tapOn:
-    text: "Allow"
+    text: 'Allow'
     optional: true
 - tapOn:
-    text: "Permitir"
+    text: 'Permitir'
     optional: true
 - waitForAnimationToEnd
 - tapOn:
-    text: "Usuario"
+    text: 'Usuario'
     optional: true
 - tapOn:
-    text: "Profile"
+    text: 'Profile'
     optional: true
 - waitForAnimationToEnd
 - assertVisible:
-    id: "profile-screen"
-- assertVisible: "Space Mountain"
+    id: 'profile-screen'
+- assertVisible: 'Space Mountain'
 - assertVisible:
-    id: "monitored-threshold-mk-space-mountain"
+    id: 'monitored-threshold-mk-space-mountain'
