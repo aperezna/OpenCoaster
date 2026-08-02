@@ -1,6 +1,28 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react-native';
+import { QueryClient } from '@tanstack/react-query';
 import { preventAutoHideAsync, hideAsync } from 'expo-splash-screen';
+import { AppInner } from '../../../App';
+
+// ---------------------------------------------------------------------------
+// Mock the persist layer: the real PersistQueryClientProvider + AsyncStorage
+// persister schedule internal debounce timers that keep Jest's event loop
+// open. The splash tests only exercise render timing, not cache persistence.
+// ---------------------------------------------------------------------------
+
+jest.mock('@tanstack/react-query-persist-client', () => {
+  const ReactActual = require('react');
+  const { QueryClientProvider } = require('@tanstack/react-query');
+  return {
+    PersistQueryClientProvider: ({
+      client,
+      children,
+    }: {
+      client: QueryClient;
+      children: React.ReactNode;
+    }) => ReactActual.createElement(QueryClientProvider, { client }, children),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Mock for AsyncStorage (needed by useHasSeenOnboarding)
@@ -13,6 +35,17 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),
   removeItem: jest.fn(() => Promise.resolve()),
 }));
+
+// ---------------------------------------------------------------------------
+// Test QueryClient — gcTime: 0 so React Query schedules no real GC timer that
+// would keep Jest's event loop open after the suite finishes.
+// ---------------------------------------------------------------------------
+
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Module-level import test — runs before any clearAllMocks
@@ -40,8 +73,7 @@ describe('SplashScreen — runtime', () => {
   it('calls hideAsync after app is ready (onboarding resolved)', async () => {
     mockGetItem.mockResolvedValue('true');
 
-    const App = require('../../../App').default;
-    render(<App />);
+    render(<AppInner queryClient={createTestQueryClient()} />);
 
     await waitFor(() => {
       expect(screen.getByTestId('discovery-screen')).toBeTruthy();
@@ -53,8 +85,7 @@ describe('SplashScreen — runtime', () => {
   it('still hides splash when onboarding is unseen', async () => {
     mockGetItem.mockResolvedValue(null);
 
-    const App = require('../../../App').default;
-    render(<App />);
+    render(<AppInner queryClient={createTestQueryClient()} />);
 
     await waitFor(() => {
       expect(screen.getByTestId('onboarding-carousel')).toBeTruthy();
@@ -64,14 +95,24 @@ describe('SplashScreen — runtime', () => {
   });
 
   it('does not call hideAsync while app is still loading', () => {
-    mockGetItem.mockReturnValue(new Promise(() => {}));
+    // Control the storage promise so the app stays in loading while we assert,
+    // then resolve it and unmount to let Jest exit cleanly.
+    let resolveLoading!: (value: string | null) => void;
+    mockGetItem.mockReturnValue(
+      new Promise((resolve) => {
+        resolveLoading = resolve;
+      }),
+    );
 
-    const App = require('../../../App').default;
-    render(<App />);
+    const { unmount } = render(<AppInner queryClient={createTestQueryClient()} />);
 
     expect(screen.getByTestId('app-loading')).toBeTruthy();
 
-    // Since the promise never resolves, hideAsync should NOT be called yet
+    // Since the promise is still pending, hideAsync should NOT be called yet
     expect(hideAsync).not.toHaveBeenCalled();
+
+    // Settle the pending storage read and clean up the mounted tree
+    resolveLoading('true');
+    unmount();
   });
 });

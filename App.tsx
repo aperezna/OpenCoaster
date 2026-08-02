@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { I18nextProvider } from 'react-i18next';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { QueryClient } from '@tanstack/react-query';
 import { NavigationContainer } from '@react-navigation/native';
 import i18next from 'i18next';
 import { createQueryClient, createPersister } from './src/data/cache/queryClient';
@@ -48,7 +49,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 // ---------------------------------------------------------------------------
 
 const queryClient = createQueryClient();
-const persister = createPersister();
+const defaultPersister = createPersister();
 
 // ---------------------------------------------------------------------------
 // Styles
@@ -67,7 +68,26 @@ const loadingStyles = StyleSheet.create({
 // Inner app (after data hooks are available)
 // ---------------------------------------------------------------------------
 
-function AppInner(): React.JSX.Element {
+interface AppInnerProps {
+  /**
+   * Optional QueryClient override for tests. Production uses the module-level
+   * client (24h gcTime); tests inject a client with gcTime: 0 so no real
+   * garbage-collection timer keeps Jest's event loop alive.
+   */
+  queryClient?: QueryClient;
+  /**
+   * Optional persister override for tests (defaults to the module-level
+   * AsyncStorage persister).
+   */
+  persister?: ReturnType<typeof createPersister>;
+}
+
+function AppInner({
+  queryClient: injectedQueryClient,
+  persister: injectedPersister,
+}: AppInnerProps = {}): React.JSX.Element {
+  const client = injectedQueryClient ?? queryClient;
+  const persister = injectedPersister ?? defaultPersister;
   const [i18nReady, setI18nReady] = useState(false);
   const { status, completeOnboarding } = useHasSeenOnboarding();
 
@@ -117,7 +137,7 @@ function AppInner(): React.JSX.Element {
     <I18nextProvider i18n={i18next}>
       <ErrorBoundary>
         <PersistQueryClientProvider
-          client={queryClient}
+          client={client}
           persistOptions={{ persister }}
           onSuccess={() => {
             // Cache hydrated — app is ready with offline data
