@@ -37,6 +37,21 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Mock useSearchHistory — the real hook reads AsyncStorage via a promise that
+// settles after act() and would warn when the real DiscoveryScreen mounts.
+// The splash tests only assert render timing, not search history.
+// ---------------------------------------------------------------------------
+
+jest.mock('../../features/discovery/useSearchHistory', () => ({
+  useSearchHistory: () => ({
+    queries: [] as string[],
+    add: jest.fn(),
+    clear: jest.fn(),
+    isLoading: false,
+  }),
+}));
+
+// ---------------------------------------------------------------------------
 // Test QueryClient — gcTime: 0 so React Query schedules no real GC timer that
 // would keep Jest's event loop open after the suite finishes.
 // ---------------------------------------------------------------------------

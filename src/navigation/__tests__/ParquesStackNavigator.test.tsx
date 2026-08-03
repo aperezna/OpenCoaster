@@ -6,6 +6,18 @@ import { ParquesStackNavigator } from '../ParquesStackNavigator';
 import { FixtureParkDiscoveryProvider } from '../../data/providers/ParkDiscoveryProvider';
 import { ParkDiscoveryContextProvider } from '../../data/providers/ParkDiscoveryProviderContext';
 
+// The real useSearchHistory resolves from AsyncStorage via a promise that
+// settles after act() when the real ParksListScreen mounts; the navigator
+// tests only assert which screen renders, not search history.
+jest.mock('../../features/discovery/useSearchHistory', () => ({
+  useSearchHistory: () => ({
+    queries: [] as string[],
+    add: jest.fn(),
+    clear: jest.fn(),
+    isLoading: false,
+  }),
+}));
+
 function createTestQueryClient() {
   return new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider, notifyManager } from '@tanstack/react-query';
+import { render, screen, waitFor, act } from '@testing-library/react-native';
 import { useParkDetail } from '../useParkDetail';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
 import type { ParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
@@ -69,6 +69,27 @@ function renderHook(parkId: string, provider: ParkDiscoveryProvider) {
 // ---------------------------------------------------------------------------
 
 describe('useParkDetail', () => {
+  // React Query's default notify scheduler uses setTimeout(0), so a parallel
+  // query (park/weather/hours/attractions) can notify outside act() under load.
+  // Flush notifications synchronously inside act, matching DiscoveryScreen.test.tsx.
+  beforeAll(() => {
+    notifyManager.setNotifyFunction((callback) => {
+      act(callback);
+    });
+    notifyManager.setScheduler((callback) => {
+      callback();
+    });
+  });
+
+  afterAll(() => {
+    notifyManager.setNotifyFunction((callback) => {
+      callback();
+    });
+    notifyManager.setScheduler((callback) => {
+      setTimeout(callback, 0);
+    });
+  });
+
   it('should return park details for a valid parkId', async () => {
     const fixture = new FixtureParkDiscoveryProvider();
     renderHook('magic-kingdom', fixture);
