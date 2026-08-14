@@ -4,6 +4,8 @@ import type { ParkWeather } from '../../models/ParkWeather';
 import type { ParkHours } from '../../models/ParkHours';
 import type { Attraction } from '../../models/Attraction';
 import type { ParkSearchQuery } from '../ParkDiscoveryProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PARK_GEO_CACHE_KEY, resetParkGeoCache } from '../../cache/parkGeoCache';
 
 // ---------------------------------------------------------------------------
 // Mock API response builders
@@ -44,6 +46,33 @@ function buildFetchMock(entries: MockFetchEntry[]) {
 
 function createProvider(baseUrl?: string): ThemeParksWikiProvider {
   return new ThemeParksWikiProvider(baseUrl);
+}
+
+/** Resolve enough microtask turns for background enrichment to make progress. */
+async function flushMicrotasks(times = 30): Promise<void> {
+  for (let i = 0; i < times; i++) {
+    await Promise.resolve();
+  }
+}
+
+function okJson(response: unknown) {
+  return {
+    ok: true,
+    json: () => Promise.resolve(response),
+  };
+}
+
+/**
+ * Drive the async background enrichment to completion under fake timers:
+ * each park hop schedules a new 1s pacing timer during a microtask flush, so
+ * advance + flush must be interleaved.
+ */
+async function finishGeoEnrichment(provider: ThemeParksWikiProvider): Promise<void> {
+  for (let i = 0; i < 10; i++) {
+    jest.advanceTimersByTime(1000);
+    await flushMicrotasks();
+  }
+  await provider.waitForGeoEnrichment();
 }
 
 // ---------------------------------------------------------------------------
@@ -233,12 +262,75 @@ const mockScheduleNoOperating = {
   ],
 };
 
+// Catalog entries WITHOUT location.city/country, matching the real
+// ThemeParks.wiki API which never returns those fields.
+const mockNoGeoWdwChildrenResponse = {
+  id: 'dest-wdw',
+  name: 'Walt Disney World',
+  entityType: 'DESTINATION',
+  children: [
+    {
+      id: 'magic-kingdom',
+      name: 'Magic Kingdom',
+      entityType: 'PARK',
+      location: {
+        latitude: 28.4177,
+        longitude: -81.5812,
+      },
+      timezone: 'America/New_York',
+    },
+    {
+      id: 'epcot',
+      name: 'Epcot',
+      entityType: 'PARK',
+      location: {
+        latitude: 28.3746,
+        longitude: -81.5496,
+      },
+      timezone: 'America/New_York',
+    },
+  ],
+};
+
+const mockNoGeoDlpChildrenResponse = {
+  id: 'dest-dlp',
+  name: 'Disneyland Paris',
+  entityType: 'DESTINATION',
+  children: [
+    {
+      id: 'disneyland-paris',
+      name: 'Disneyland Park',
+      entityType: 'PARK',
+      location: {
+        latitude: 48.8675,
+        longitude: 2.7825,
+      },
+      timezone: 'Europe/Paris',
+    },
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-beforeEach(() => {
+// jest.resetAllMocks() wipes the implementations of the AsyncStorage manual
+// mock; capture and re-apply them so the geo cache keeps working.
+const storageMockImplementations = {
+  getItem: (AsyncStorage.getItem as jest.Mock).getMockImplementation()!,
+  setItem: (AsyncStorage.setItem as jest.Mock).getMockImplementation()!,
+  removeItem: (AsyncStorage.removeItem as jest.Mock).getMockImplementation()!,
+  clear: (AsyncStorage.clear as jest.Mock).getMockImplementation()!,
+};
+
+beforeEach(async () => {
   jest.resetAllMocks();
+  (AsyncStorage.getItem as jest.Mock).mockImplementation(storageMockImplementations.getItem);
+  (AsyncStorage.setItem as jest.Mock).mockImplementation(storageMockImplementations.setItem);
+  (AsyncStorage.removeItem as jest.Mock).mockImplementation(storageMockImplementations.removeItem);
+  (AsyncStorage.clear as jest.Mock).mockImplementation(storageMockImplementations.clear);
+  resetParkGeoCache();
+  await AsyncStorage.clear();
 });
 
 describe('ThemeParksWikiProvider — searchParks', () => {
@@ -339,6 +431,219 @@ describe('ThemeParksWikiProvider — searchParks', () => {
     // Should still get parks from the successful destination
     expect(results.length).toBeGreaterThanOrEqual(1);
     expect(results.some((p) => p.country === 'FR')).toBe(true);
+  });
+});
+
+describe('ThemeParksWikiProvider — catalog caching & geo enrichment', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('should fetch the catalog only once across multiple searches', async () => {
+    const fetchMock = buildFetchMock([
+      { url: '/destinations', response: mockDestinationsResponse },
+      { url: '/entity/dest-wdw/children', response: mockWdwChildrenResponse },
+      { url: '/entity/dest-dlp/children', response: mockDlpChildrenResponse },
+    ]);
+    global.fetch = fetchMock;
+
+    const provider = createProvider();
+    const byName = await provider.searchParks({ name: 'kingdom' });
+    const byCity = await provider.searchParks({ city: 'orlando' });
+    const byCountry = await provider.searchParks({ country: 'fr' });
+
+    expect(byName).toHaveLength(1);
+    expect(byCity).toHaveLength(2);
+    expect(byCountry).toHaveLength(1);
+
+    const requestedUrls = fetchMock.mock.calls.map((call) => String(call[0]));
+    expect(requestedUrls.filter((u) => u.includes('/destinations'))).toHaveLength(1);
+    expect(requestedUrls.filter((u) => u.includes('/entity/dest-wdw/children'))).toHaveLength(1);
+    expect(requestedUrls.filter((u) => u.includes('/entity/dest-dlp/children'))).toHaveLength(1);
+  });
+
+  it('should refresh the catalog when refreshCatalog() is called', async () => {
+    const fetchMock = buildFetchMock([
+      { url: '/destinations', response: mockDestinationsResponse },
+      { url: '/entity/dest-wdw/children', response: mockWdwChildrenResponse },
+      { url: '/entity/dest-dlp/children', response: mockDlpChildrenResponse },
+    ]);
+    global.fetch = fetchMock;
+
+    const provider = createProvider();
+    await provider.searchParks({});
+    await provider.refreshCatalog();
+
+    const requestedUrls = fetchMock.mock.calls.map((call) => String(call[0]));
+    expect(requestedUrls.filter((u) => u.includes('/destinations'))).toHaveLength(2);
+  });
+
+  it('should filter by city/country once enrichment data is present', async () => {
+    jest.useFakeTimers();
+    global.fetch = buildFetchMock([
+      { url: '/destinations', response: mockDestinationsResponse },
+      { url: '/entity/dest-wdw/children', response: mockNoGeoWdwChildrenResponse },
+      { url: '/entity/dest-dlp/children', response: mockNoGeoDlpChildrenResponse },
+      {
+        url: 'nominatim.openstreetmap.org',
+        response: { address: { city: 'Orlando', country: 'United States' } },
+      },
+    ]);
+
+    const provider = createProvider();
+    const all = await provider.searchParks({});
+    expect(all).toHaveLength(3);
+
+    // Let the background enrichment run to completion.
+    await finishGeoEnrichment(provider);
+
+    expect(await provider.searchParks({ city: 'orlando' })).toHaveLength(3);
+    expect(await provider.searchParks({ country: 'united states' })).toHaveLength(3);
+  });
+
+  it('should pace Nominatim at 1 request/second and persist results to AsyncStorage', async () => {
+    jest.useFakeTimers();
+    const fetchMock = jest.fn();
+    fetchMock.mockImplementation((url: string) => {
+      const u = String(url);
+      if (u.includes('/destinations')) return Promise.resolve(okJson(mockDestinationsResponse));
+      if (u.includes('/entity/dest-wdw/children')) {
+        return Promise.resolve(okJson(mockNoGeoWdwChildrenResponse));
+      }
+      if (u.includes('/entity/dest-dlp/children')) {
+        return Promise.resolve(okJson(mockNoGeoDlpChildrenResponse));
+      }
+      if (u.includes('nominatim.openstreetmap.org')) {
+        const lat = Number(new URL(u).searchParams.get('lat'));
+        const orlando = lat < 40;
+        return Promise.resolve(
+          okJson({
+            address: {
+              city: orlando ? 'Orlando' : 'Marne-la-Vallée',
+              country: orlando ? 'United States' : 'France',
+            },
+          }),
+        );
+      }
+      return Promise.reject(new Error(`Unexpected fetch: ${u}`));
+    });
+    global.fetch = fetchMock;
+
+    const provider = createProvider();
+    const initial = await provider.searchParks({});
+    expect(initial).toHaveLength(3);
+    expect(initial.every((p) => !p.country)).toBe(true);
+
+    const nominatimCalls = () =>
+      fetchMock.mock.calls.filter((call) =>
+        String(call[0]).includes('nominatim.openstreetmap.org'),
+      );
+
+    // First request is issued once background enrichment starts.
+    await flushMicrotasks();
+    expect(nominatimCalls()).toHaveLength(1);
+
+    // Half a second is not enough for the next request.
+    jest.advanceTimersByTime(500);
+    await flushMicrotasks();
+    expect(nominatimCalls()).toHaveLength(1);
+
+    // One full second from the first request issues the second.
+    jest.advanceTimersByTime(600);
+    await flushMicrotasks();
+    expect(nominatimCalls()).toHaveLength(2);
+
+    jest.advanceTimersByTime(1100);
+    await flushMicrotasks();
+    await finishGeoEnrichment(provider);
+    expect(nominatimCalls()).toHaveLength(3);
+
+    // Results are persisted to AsyncStorage keyed by park id.
+    const raw = await AsyncStorage.getItem(PARK_GEO_CACHE_KEY);
+    expect(raw).not.toBeNull();
+    const cached = JSON.parse(raw as string);
+    expect(cached['magic-kingdom']).toEqual({ city: 'Orlando', country: 'United States' });
+    expect(cached['disneyland-paris']).toEqual({
+      city: 'Marne-la-Vallée',
+      country: 'France',
+    });
+
+    // In-memory catalog entries are enriched, so filters now match.
+    expect(await provider.searchParks({ country: 'united states' })).toHaveLength(2);
+  });
+
+  it('should skip enrichment for parks that already have cached geo', async () => {
+    jest.useFakeTimers();
+    await AsyncStorage.setItem(
+      PARK_GEO_CACHE_KEY,
+      JSON.stringify({
+        'magic-kingdom': { city: 'Cached City', country: 'Cached Country' },
+      }),
+    );
+    const fetchMock = jest.fn();
+    fetchMock.mockImplementation((url: string) => {
+      const u = String(url);
+      if (u.includes('/destinations')) return Promise.resolve(okJson(mockDestinationsResponse));
+      if (u.includes('/entity/dest-wdw/children')) {
+        return Promise.resolve(okJson(mockNoGeoWdwChildrenResponse));
+      }
+      if (u.includes('/entity/dest-dlp/children')) {
+        return Promise.resolve(okJson(mockNoGeoDlpChildrenResponse));
+      }
+      if (u.includes('nominatim.openstreetmap.org')) {
+        return Promise.resolve(okJson({ address: { city: 'Paris', country: 'France' } }));
+      }
+      return Promise.reject(new Error(`Unexpected fetch: ${u}`));
+    });
+    global.fetch = fetchMock;
+
+    const provider = createProvider();
+    const all = await provider.searchParks({});
+
+    // Cached geo is applied once enrichment starts.
+    await flushMicrotasks();
+    const magicKingdom = all.find((p) => p.id === 'magic-kingdom');
+    expect(magicKingdom?.city).toBe('Cached City');
+    expect(magicKingdom?.country).toBe('Cached Country');
+
+    // Only the two parks without cached geo are geocoded.
+    jest.advanceTimersByTime(5000);
+    await flushMicrotasks();
+    await provider.waitForGeoEnrichment();
+    const nominatimCalls = fetchMock.mock.calls.filter((call) =>
+      String(call[0]).includes('nominatim.openstreetmap.org'),
+    );
+    expect(nominatimCalls).toHaveLength(2);
+  });
+
+  it('should not persist failed Nominatim lookups and keep searching', async () => {
+    jest.useFakeTimers();
+    const fetchMock = jest.fn();
+    fetchMock.mockImplementation((url: string) => {
+      const u = String(url);
+      if (u.includes('/destinations')) return Promise.resolve(okJson(mockDestinationsResponse));
+      if (u.includes('/entity/dest-wdw/children')) {
+        return Promise.resolve(okJson(mockNoGeoWdwChildrenResponse));
+      }
+      if (u.includes('/entity/dest-dlp/children')) {
+        return Promise.resolve(okJson(mockNoGeoDlpChildrenResponse));
+      }
+      if (u.includes('nominatim.openstreetmap.org')) {
+        return Promise.resolve({ ok: false, status: 429, statusText: 'Too Many Requests' });
+      }
+      return Promise.reject(new Error(`Unexpected fetch: ${u}`));
+    });
+    global.fetch = fetchMock;
+
+    const provider = createProvider();
+    const results = await provider.searchParks({});
+    expect(results).toHaveLength(3);
+
+    await finishGeoEnrichment(provider);
+
+    // Nothing survived the failed lookups.
+    expect(await AsyncStorage.getItem(PARK_GEO_CACHE_KEY)).toBeNull();
+    expect(await provider.searchParks({ name: 'kingdom' })).toHaveLength(1);
   });
 });
 
@@ -472,6 +777,85 @@ describe('ThemeParksWikiProvider — getParkAttractions', () => {
     expect(results).toHaveLength(3);
     // Even though individual attractions report OPERATING with wait times,
     // the park-level CLOSED status forces all to be closed.
+    expect(results.every((a) => a.waitTime === 0)).toBe(true);
+    expect(results.every((a) => a.status === 'closed')).toBe(true);
+  });
+
+  it('should derive park operating state from attractions when park-level status is absent', async () => {
+    // The real /live endpoint does not include a park-level status field,
+    // so the operating state must come from the attraction live data.
+    const noParkLevelStatusResponse = {
+      id: 'magic-kingdom',
+      name: 'Magic Kingdom',
+      entityType: 'PARK',
+      liveData: [
+        {
+          id: 'mk-space-mountain',
+          status: 'OPERATING',
+          queue: { STANDBY: { waitTime: 45 } },
+        },
+        {
+          id: 'mk-pirates',
+          status: 'OPERATING',
+          queue: { STANDBY: { waitTime: 20 } },
+        },
+        {
+          id: 'mk-mickeys-philhar',
+          status: 'CLOSED',
+          queue: {},
+        },
+      ],
+    };
+
+    global.fetch = buildFetchMock([
+      { url: '/entity/magic-kingdom/children', response: mockAttractionsChildren },
+      { url: '/entity/magic-kingdom/live', response: noParkLevelStatusResponse },
+    ]);
+
+    const provider = createProvider();
+    const results = await provider.getParkAttractions('magic-kingdom');
+
+    expect(results).toHaveLength(3);
+    const spaceMountain = results.find((a) => a.id === 'mk-space-mountain');
+    expect(spaceMountain).toMatchObject<Partial<Attraction>>({
+      waitTime: 45,
+      status: 'operating',
+    });
+    const pirates = results.find((a) => a.id === 'mk-pirates');
+    expect(pirates).toMatchObject<Partial<Attraction>>({
+      waitTime: 20,
+      status: 'operating',
+    });
+    const show = results.find((a) => a.id === 'mk-mickeys-philhar');
+    expect(show).toMatchObject<Partial<Attraction>>({
+      waitTime: 0,
+      status: 'closed',
+    });
+  });
+
+  it('should keep all attractions closed when every attraction reports CLOSED', async () => {
+    // A park that is actually closed reports every attraction as CLOSED,
+    // so even without a park-level status field nothing shows as operating.
+    const closedAttractionsResponse = {
+      id: 'magic-kingdom',
+      name: 'Magic Kingdom',
+      entityType: 'PARK',
+      liveData: [
+        { id: 'mk-space-mountain', status: 'CLOSED', queue: {} },
+        { id: 'mk-pirates', status: 'CLOSED', queue: {} },
+        { id: 'mk-mickeys-philhar', status: 'CLOSED', queue: {} },
+      ],
+    };
+
+    global.fetch = buildFetchMock([
+      { url: '/entity/magic-kingdom/children', response: mockAttractionsChildren },
+      { url: '/entity/magic-kingdom/live', response: closedAttractionsResponse },
+    ]);
+
+    const provider = createProvider();
+    const results = await provider.getParkAttractions('magic-kingdom');
+
+    expect(results).toHaveLength(3);
     expect(results.every((a) => a.waitTime === 0)).toBe(true);
     expect(results.every((a) => a.status === 'closed')).toBe(true);
   });

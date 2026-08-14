@@ -7,6 +7,11 @@ import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscov
 import { FakeLocationService } from '../../../data/location/__tests__/FakeLocationService';
 import { OPENCOASTER_KEY_PREFIX } from '../../../data/cache/queryClient';
 import type { LocationService } from '../../../data/location/LocationService';
+import type {
+  ParkDiscoveryProvider,
+  ParkSearchQuery,
+} from '../../../data/providers/ParkDiscoveryProvider';
+import type { ParkSummary } from '../../../data/models/ParkSummary';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -56,6 +61,26 @@ function renderScreen(options: RenderOptions = {}) {
       </ParkDiscoveryContextProvider>
     </QueryClientProvider>,
   );
+}
+
+/** Provider that never resolves searches for a specific query name. */
+class PendingSearchProvider implements ParkDiscoveryProvider {
+  private fixture = new FixtureParkDiscoveryProvider();
+  readonly pendingName = 'LoadingSearch';
+
+  searchParks = jest.fn((query: ParkSearchQuery): Promise<ParkSummary[]> => {
+    if (query.name === this.pendingName) {
+      return new Promise<ParkSummary[]>(() => {});
+    }
+    return this.fixture.searchParks(query);
+  });
+
+  getParkById = async (parkId: string): Promise<ParkSummary | null> =>
+    this.fixture.getParkById(parkId);
+  getParkWeather = async (parkId: string) => this.fixture.getParkWeather(parkId);
+  getParkHours = async (parkId: string) => this.fixture.getParkHours(parkId);
+  getParkAttractions = async (parkId: string) => this.fixture.getParkAttractions(parkId);
+  getUserProfile = async () => this.fixture.getUserProfile();
 }
 
 describe('DiscoveryScreen', () => {
@@ -130,6 +155,38 @@ describe('DiscoveryScreen', () => {
     await waitFor(() => {
       expect(screen.getByText('common.noParksFound')).toBeTruthy();
     });
+  });
+
+  it('should show a loading indicator instead of the empty state while a search is pending', async () => {
+    const provider = new PendingSearchProvider();
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <ParkDiscoveryContextProvider provider={provider}>
+          <DiscoveryScreen
+            locationService={
+              new FakeLocationService('granted', { latitude: 28.4, longitude: -81.6 })
+            }
+          />
+        </ParkDiscoveryContextProvider>
+      </QueryClientProvider>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Type a query whose provider never resolves.
+    act(() => {
+      fireEvent.changeText(screen.getByTestId('search-name-input'), 'LoadingSearch');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('search-results-loading')).toBeOnTheScreen();
+    });
+    expect(screen.queryByTestId('search-results-empty')).toBeNull();
   });
 
   it('should handle location permission denied gracefully', async () => {

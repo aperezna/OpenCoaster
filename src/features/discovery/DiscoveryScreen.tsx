@@ -7,6 +7,7 @@ import {
   Text,
   StyleSheet,
   AppState,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
@@ -126,7 +127,7 @@ export function DiscoveryScreen({
     setProximityEnabled((prev) => !prev);
   }, []);
 
-  const { parks, error, refetch } = useSearchParks(searchQuery, provider);
+  const { parks, isLoading, isFetching, error, refetch } = useSearchParks(searchQuery, provider);
   const queryClient = useQueryClient();
 
   // Stale-data pill
@@ -278,6 +279,13 @@ export function DiscoveryScreen({
           >
             <Text style={styles.clearHistoryText}>{t('common.clearHistory')}</Text>
           </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Search results loading */}
+      {showResults && (isLoading || isFetching) && !parks && (
+        <View testID="search-results-loading" style={styles.searchResultsLoading}>
+          <ActivityIndicator size="small" color={colors.textSecondary} />
         </View>
       )}
 
@@ -465,6 +473,22 @@ function createStyles(colors: ThemeColors) {
       shadowRadius: 4,
       elevation: 3,
       paddingVertical: 4,
+    },
+    searchResultsLoading: {
+      position: 'absolute',
+      top: 60,
+      left: 12,
+      right: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: colors.cardShadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     resultItem: {
       paddingHorizontal: 16,

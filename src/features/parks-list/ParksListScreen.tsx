@@ -28,8 +28,6 @@ export function ParksListScreen(): React.JSX.Element {
   const [debouncedQuery, setDebouncedQuery] = useState<ParkSearchQuery>({});
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  // Track whether data has ever been loaded — prevents skeleton on re-fetch
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const { queries: searchHistory, add, clear: clearHistory } = useSearchHistory();
 
   useEffect(() => {
@@ -44,12 +42,6 @@ export function ParksListScreen(): React.JSX.Element {
   }, [searchText, cityText, countryText]);
 
   const { parks, isLoading, isFetching, error, refetch } = useSearchParks(debouncedQuery, provider);
-
-  useEffect(() => {
-    if (parks && !hasLoadedOnce) {
-      setHasLoadedOnce(true);
-    }
-  }, [parks, hasLoadedOnce]);
 
   const handleParkPress = useCallback(
     (parkId: string) => {
@@ -101,7 +93,11 @@ export function ParksListScreen(): React.JSX.Element {
     </>
   );
 
-  if (isLoading && !hasLoadedOnce) {
+  // While a search is pending with no previous results to show, render a real
+  // loading indicator instead of the "No parks found" empty state.
+  const isPending = (isLoading || isFetching) && !parks && !error;
+
+  if (isPending) {
     return (
       <View style={styles.container} testID="parks-list-screen">
         <ParksListSkeleton />

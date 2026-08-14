@@ -4,6 +4,11 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react-
 import { ParksListScreen } from '../ParksListScreen';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
 import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscoveryProviderContext';
+import type {
+  ParkDiscoveryProvider,
+  ParkSearchQuery,
+} from '../../../data/providers/ParkDiscoveryProvider';
+import type { ParkSummary } from '../../../data/models/ParkSummary';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -39,6 +44,26 @@ function renderScreen() {
   );
 }
 
+/** Provider that never resolves searches for a specific query name. */
+class PendingSearchProvider implements ParkDiscoveryProvider {
+  private fixture = new FixtureParkDiscoveryProvider();
+  readonly pendingName = 'LoadingSearch';
+
+  searchParks = jest.fn((query: ParkSearchQuery): Promise<ParkSummary[]> => {
+    if (query.name === this.pendingName) {
+      return new Promise<ParkSummary[]>(() => {});
+    }
+    return this.fixture.searchParks(query);
+  });
+
+  getParkById = async (parkId: string): Promise<ParkSummary | null> =>
+    this.fixture.getParkById(parkId);
+  getParkWeather = async (parkId: string) => this.fixture.getParkWeather(parkId);
+  getParkHours = async (parkId: string) => this.fixture.getParkHours(parkId);
+  getParkAttractions = async (parkId: string) => this.fixture.getParkAttractions(parkId);
+  getUserProfile = async () => this.fixture.getUserProfile();
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -60,6 +85,37 @@ describe('ParksListScreen', () => {
     });
     // Skeleton should be gone once parks are loaded
     expect(screen.queryByTestId('parks-list-skeleton')).toBeNull();
+  });
+
+  it('should show a loading indicator instead of the empty state while a new search is pending', async () => {
+    const provider = new PendingSearchProvider();
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <ParkDiscoveryContextProvider provider={provider}>
+          <ParksListScreen />
+        </ParkDiscoveryContextProvider>
+      </QueryClientProvider>,
+    );
+
+    // Initial load resolves and the list is shown.
+    await waitFor(() => {
+      expect(screen.getByTestId('park-result-list')).toBeOnTheScreen();
+    });
+
+    // Type a query whose provider never resolves, then flush the debounce.
+    jest.useFakeTimers();
+    fireEvent.changeText(screen.getByTestId('park-search-input'), 'LoadingSearch');
+    act(() => {
+      jest.advanceTimersByTime(350);
+    });
+    jest.useRealTimers();
+
+    // The pending search renders a loading indicator, never the empty state.
+    await waitFor(() => {
+      expect(screen.getByTestId('parks-list-skeleton')).toBeOnTheScreen();
+    });
+    expect(screen.queryByTestId('park-result-list-empty')).toBeNull();
+    expect(screen.queryByTestId('park-result-list')).toBeNull();
   });
 
   // --- Render all parks ---

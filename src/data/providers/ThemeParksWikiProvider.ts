@@ -5,6 +5,8 @@ import type { Attraction } from '../models/Attraction';
 import type { UserProfile } from '../models/UserProfile';
 import type { ParkSearchQuery, ParkDiscoveryProvider } from './ParkDiscoveryProvider';
 import { mockUserProfile } from './fixtures';
+import { loadParkGeoCache, saveParkGeoCache } from '../cache/parkGeoCache';
+import type { ParkGeo } from '../cache/parkGeoCache';
 
 // ---------------------------------------------------------------------------
 // Raw API response types for ThemeParks.wiki
@@ -72,6 +74,9 @@ interface OpenMeteoResponse {
 
 const THEMEPARKS_API_BASE = 'https://api.themeparks.wiki/v1';
 const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast';
+const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
+const NOMINATIM_USER_AGENT = 'OpenCoaster/0.1 (React Native mobile app)';
+const GEOCODE_PACING_MS = 1000;
 
 /** Earth radius in km for Haversine distance */
 const EARTH_RADIUS_KM = 6371;
@@ -92,6 +97,11 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Resolve after `ms` milliseconds (used to honor Nominatim's 1 req/s policy). */
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // ---------------------------------------------------------------------------
@@ -146,6 +156,21 @@ function mapStatus(liveStatus?: string): Attraction['status'] {
 export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
   private readonly baseUrl: string;
 
+  /**
+   * Memoized full catalog of parks. Once loaded it is reused by every
+   * searchParks call so repeated searches do not re-fetch the API.
+   */
+  private catalogPromise: Promise<ParkSummary[]> | null = null;
+
+  /** Resolves when the in-flight background geo enrichment finishes. */
+  private geoEnrichmentPromise: Promise<void> | null = null;
+
+  /** Bumped by refreshCatalog() so stale enrichment runs stop mutating data. */
+  private geoGeneration = 0;
+
+  /** Park ids whose reverse-geocode lookup failed; not retried this session. */
+  private readonly failedGeoLookups = new Set<string>();
+
   constructor(baseUrl: string = THEMEPARKS_API_BASE) {
     this.baseUrl = baseUrl;
   }
@@ -190,6 +215,78 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
   async searchParks(query: ParkSearchQuery): Promise<ParkSummary[]> {
     const { name, city, country, proximity } = query;
 
+    const catalog = await this.loadCatalog();
+
+    // Apply name filter (case-insensitive substring)
+    let results = catalog;
+    if (name) {
+      const q = name.toLowerCase();
+      results = results.filter((p) => p.name.toLowerCase().includes(q));
+    }
+
+    if (city) {
+      const q = city.toLowerCase();
+      results = results.filter((p) => p.city.toLowerCase().includes(q));
+    }
+
+    if (country) {
+      const q = country.toLowerCase();
+      results = results.filter((p) => p.country.toLowerCase().includes(q));
+    }
+
+    // Apply proximity filter (Haversine distance in km)
+    if (proximity) {
+      const { latitude, longitude, radiusKm } = proximity;
+      results = results.filter(
+        (p) => haversineKm(latitude, longitude, p.latitude, p.longitude) <= radiusKm,
+      );
+    }
+
+    return results;
+  }
+
+  // -- Catalog caching ------------------------------------------------------
+
+  /**
+   * Return the cached catalog, fetching it exactly once. Concurrent and
+   * sequential calls reuse the same in-flight/completed promise.
+   */
+  private loadCatalog(): Promise<ParkSummary[]> {
+    if (!this.catalogPromise) {
+      this.catalogPromise = this.fetchCatalog().then(
+        (parks) => {
+          this.startGeoEnrichment(parks);
+          return parks;
+        },
+        (error) => {
+          // Reset on failure so a later search can retry the load.
+          this.catalogPromise = null;
+          throw error;
+        },
+      );
+    }
+    return this.catalogPromise;
+  }
+
+  /**
+   * Discard the cached catalog and re-fetch it from the API.
+   */
+  public refreshCatalog(): Promise<ParkSummary[]> {
+    this.geoGeneration += 1;
+    this.catalogPromise = null;
+    this.geoEnrichmentPromise = null;
+    return this.loadCatalog();
+  }
+
+  /**
+   * Resolve when the current background geo enrichment finishes. Used by
+   * tests (and any future "enrichment complete" UI signal).
+   */
+  public waitForGeoEnrichment(): Promise<void> {
+    return this.geoEnrichmentPromise ?? Promise.resolve();
+  }
+
+  private async fetchCatalog(): Promise<ParkSummary[]> {
     // Fetch all top-level destinations
     // API returns { destinations: [...] }
     interface DestinationsResponse {
@@ -222,34 +319,89 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
       }
     }
 
-    // Map to ParkSummary
-    let results = parks.map((e) => this.mapToParkSummary(e));
+    return parks.map((e) => this.mapToParkSummary(e));
+  }
 
-    // Apply name filter (case-insensitive)
-    if (name) {
-      const q = name.toLowerCase();
-      results = results.filter((p) => p.name.toLowerCase().includes(q));
+  // -- Background geo enrichment -------------------------------------------
+
+  /**
+   * Kick off reverse-geocoding for parks that lack city/country. Runs in the
+   * background so search results are never blocked; enriches the in-memory
+   * catalog entries as results arrive and persists them to AsyncStorage.
+   */
+  private startGeoEnrichment(parks: ParkSummary[]): void {
+    const generation = this.geoGeneration;
+    this.geoEnrichmentPromise = this.enrichCatalogGeo(parks, generation);
+    // Best effort: geocoding failures must never surface or crash a search.
+    this.geoEnrichmentPromise.catch(() => {
+      // Swallow residual failures.
+    });
+  }
+
+  private async enrichCatalogGeo(parks: ParkSummary[], generation: number): Promise<void> {
+    const isCurrent = (): boolean => this.geoGeneration === generation;
+
+    const geoCache = await loadParkGeoCache();
+    if (!isCurrent()) return;
+
+    // Apply cached geo and collect parks that still need a lookup.
+    const missing: ParkSummary[] = [];
+    for (const park of parks) {
+      const geo = geoCache[park.id];
+      if (geo && (geo.city || geo.country)) {
+        if (geo.city) park.city = geo.city;
+        if (geo.country) park.country = geo.country;
+      } else if ((!park.city || !park.country) && (park.latitude !== 0 || park.longitude !== 0)) {
+        missing.push(park);
+      }
     }
 
-    if (city) {
-      const q = city.toLowerCase();
-      results = results.filter((p) => p.city.toLowerCase().includes(q));
-    }
+    // Nothing left to geocode: skip enrichment entirely.
+    if (missing.length === 0) return;
 
-    if (country) {
-      const q = country.toLowerCase();
-      results = results.filter((p) => p.country.toLowerCase().includes(q));
-    }
+    for (let i = 0; i < missing.length; i++) {
+      if (!isCurrent()) return;
+      const park = missing[i];
+      if (this.failedGeoLookups.has(park.id)) continue;
 
-    // Apply proximity filter (Haversine distance in km)
-    if (proximity) {
-      const { latitude, longitude, radiusKm } = proximity;
-      results = results.filter(
-        (p) => haversineKm(latitude, longitude, p.latitude, p.longitude) <= radiusKm,
-      );
-    }
+      const geo = await this.reverseGeocode(park.latitude, park.longitude);
+      if (!isCurrent()) return;
 
-    return results;
+      if (geo && (geo.city || geo.country)) {
+        if (geo.city) park.city = geo.city;
+        if (geo.country) park.country = geo.country;
+        geoCache[park.id] = geo;
+        // Persist each result (storage failures are swallowed internally).
+        await saveParkGeoCache(geoCache);
+      } else {
+        // Failed lookup: leave geo empty and do not retry within this session.
+        this.failedGeoLookups.add(park.id);
+      }
+
+      // Nominatim usage policy allows at most 1 request per second.
+      if (i < missing.length - 1) {
+        await wait(GEOCODE_PACING_MS);
+      }
+    }
+  }
+
+  /** Reverse geocode a coordinate with the free Nominatim API (no key). */
+  private async reverseGeocode(lat: number, lon: number): Promise<ParkGeo | null> {
+    const url = `${NOMINATIM_BASE}/reverse?lat=${lat}&lon=${lon}&format=jsonv2&zoom=10&accept-language=en`;
+    try {
+      const response = await fetch(url, {
+        headers: { 'User-Agent': NOMINATIM_USER_AGENT },
+      });
+      if (!response.ok) return null;
+      const data = (await response.json()) as { address?: Record<string, string> };
+      const address = data?.address;
+      if (!address) return null;
+      const city =
+        address.city || address.town || address.village || address.county || address.state || '';
+      return { city, country: address.country ?? '' };
+    } catch {
+      return null;
+    }
   }
 
   async getParkById(parkId: string): Promise<ParkSummary | null> {
@@ -293,7 +445,14 @@ export class ThemeParksWikiProvider implements ParkDiscoveryProvider {
 
     // Check park-level status — if the park itself is not OPERATING,
     // all attractions are closed regardless of what the live data says.
-    const isParkOperating = liveRes.status === 'OPERATING';
+    // The real /live endpoint does not return a park-level status field
+    // (verified against the live API), so when it is absent derive the
+    // operating state from the attractions themselves: a park that is
+    // actually closed reports every attraction as CLOSED.
+    const isParkOperating =
+      liveRes.status != null
+        ? liveRes.status === 'OPERATING'
+        : (liveRes.liveData?.some((entry) => entry.status === 'OPERATING') ?? false);
 
     // Merge live data into each attraction
     return attractions.map((e) => {
