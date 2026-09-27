@@ -1,5 +1,13 @@
 import React, { useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  FlatList,
+  TouchableOpacity,
+  RefreshControl,
+  StyleSheet,
+} from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import type { ParkSummary } from '../../data/models/ParkSummary';
 import type { ThemeColors } from '../../theme/colors';
@@ -34,24 +42,44 @@ export function ParkResultList({
       data={parks}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <TouchableOpacity
-          testID={`park-item-${item.id}`}
-          style={styles.item}
-          onPress={() => onParkPress(item.id)}
-        >
-          <Text style={styles.parkName}>{item.name}</Text>
-          {item.city ? (
-            <Text style={styles.parkMeta}>
-              {item.city}
-              {item.country ? `, ${item.country}` : ''}
-            </Text>
-          ) : null}
-        </TouchableOpacity>
+        <ParkResultItem item={item} onPress={onParkPress} styles={styles} />
       )}
       refreshControl={
         onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
       }
     />
+  );
+}
+
+function ParkResultItem({
+  item,
+  onPress,
+  styles,
+}: {
+  item: ParkSummary;
+  onPress: (parkId: string) => void;
+  styles: ReturnType<typeof createStyles>;
+}) {
+  const displayImage = item.image;
+  const imageUrl = displayImage?.thumbnailUrl ?? item.photoUrl;
+
+  return (
+    <TouchableOpacity
+      testID={`park-item-${item.id}`}
+      style={styles.item}
+      onPress={() => onPress(item.id)}
+    >
+      {imageUrl ? (
+        <Image testID={`park-image-${item.id}`} source={{ uri: imageUrl }} style={styles.image} />
+      ) : null}
+      <Text style={styles.parkName}>{item.name}</Text>
+      {item.city ? (
+        <Text style={styles.parkMeta}>
+          {item.city}
+          {item.country ? `, ${item.country}` : ''}
+        </Text>
+      ) : null}
+    </TouchableOpacity>
   );
 }
 
@@ -69,6 +97,12 @@ function createStyles(colors: ThemeColors) {
       padding: 12,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+    },
+    image: {
+      width: '100%',
+      height: 96,
+      marginBottom: 8,
+      borderRadius: 6,
     },
     parkName: {
       fontSize: 16,

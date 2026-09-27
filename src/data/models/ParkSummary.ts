@@ -1,3 +1,5 @@
+import type { ImageMetadata } from '../images/imageMetadata';
+
 export interface ParkSummary {
   id: string;
   name: string;
@@ -10,4 +12,6 @@ export interface ParkSummary {
   address?: string;
   phone?: string;
   website?: string;
+  /** Licensed image metadata; photoUrl remains the legacy ThemeParks media field. */
+  image?: ImageMetadata;
 }

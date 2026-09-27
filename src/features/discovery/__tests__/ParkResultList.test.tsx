@@ -37,6 +37,25 @@ describe('ParkResultList', () => {
     expect(screen.getByText(/NL/)).toBeTruthy();
   });
 
+  it('should render a licensed thumbnail when image metadata is available', async () => {
+    const parksWithImage: ParkSummary[] = [
+      {
+        ...mockParks[0],
+        image: {
+          sourceUrl: 'https://commons.wikimedia.org/wiki/File:Magic.jpg',
+          creator: 'Creator',
+          license: { name: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' },
+          attribution: 'Creator',
+          thumbnailUrl: 'https://commons.wikimedia.org/thumb.jpg',
+          fetchedAt: '2026-09-27T12:00:00.000Z',
+        },
+      },
+    ];
+
+    await render(<ParkResultList parks={parksWithImage} onParkPress={() => {}} />);
+    expect(screen.getByTestId('park-image-park-1')).toBeTruthy();
+  });
+
   it('should call onParkPress when a park item is pressed', async () => {
     const onParkPress = jest.fn();
     await render(<ParkResultList parks={mockParks} onParkPress={onParkPress} />);

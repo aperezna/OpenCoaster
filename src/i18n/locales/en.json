@@ -28,6 +28,8 @@
   "parkDetail.loadError": "Could not load park info.",
   "parkDetail.sectionUnavailable": "This section is temporarily unavailable.",
   "parkDetail.noPhoto": "No photo available",
+  "images.source": "View original source",
+  "images.openSource": "Open image source",
   "parkDetail.directions": "Directions",
   "parkDetail.planVisit": "Plan visit",
   "parkDetail.shareTitle": "{parkName} · {city}, {country}",

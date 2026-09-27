@@ -38,6 +38,8 @@ import ErrorState from '../../components/ErrorState';
 import type { RouteProp } from '@react-navigation/native';
 import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigator';
 import type { Attraction } from '../../data/models/Attraction';
+import { useLicensedImage, useLicensedImages } from '../../data/images/useLicensedImage';
+import { ImageAttribution } from '../../components/ImageAttribution';
 
 const DEFAULT_PARK_ID = '75ea578a-adc8-4116-a54d-dccb60765ef9'; // Magic Kingdom Park
 
@@ -77,6 +79,21 @@ export function ParkDetailScreen(): React.JSX.Element {
     attractionsError,
     refetchAll,
   } = useParkDetail(parkId, provider);
+  const licensedParkImage = useLicensedImage(
+    park?.name ?? '',
+    undefined,
+    Boolean(park && !park.photoUrl && !park.image),
+  );
+  const attractionImages = useLicensedImages(
+    (attractions ?? []).map((attraction) => ({
+      query: attraction.name,
+      image: attraction.image,
+    })),
+  );
+  const attractionsWithImages = attractions?.map((attraction, index) => ({
+    ...attraction,
+    image: attraction.image ?? attractionImages[index],
+  }));
 
   const busyMeterResult = useMemo(
     () => (attractions ? calculateBusyLevel(attractions, new Date()) : null),
@@ -251,8 +268,23 @@ export function ParkDetailScreen(): React.JSX.Element {
       refreshControl={<RefreshControl refreshing={isFetching} onRefresh={handleRefresh} />}
     >
       {/* Photo header */}
-      {park.photoUrl ? (
-        <Image testID="park-photo" source={{ uri: park.photoUrl }} style={styles.photo} />
+      {park.photoUrl || park.image || licensedParkImage.image ? (
+        <>
+          <Image
+            testID="park-photo"
+            source={{
+              uri:
+                park.image?.thumbnailUrl ?? licensedParkImage.image?.thumbnailUrl ?? park.photoUrl,
+            }}
+            style={styles.photo}
+          />
+          {(park.image ?? licensedParkImage.image) ? (
+            <ImageAttribution
+              image={park.image ?? licensedParkImage.image!}
+              testID="park-image-source"
+            />
+          ) : null}
+        </>
       ) : (
         <View testID="park-photo-placeholder" style={styles.photoPlaceholder}>
           <Text style={styles.placeholderText}>{t('parkDetail.noPhoto')}</Text>
@@ -341,7 +373,7 @@ export function ParkDetailScreen(): React.JSX.Element {
       {/* Attractions with individual loading */}
       {attractions ? (
         <AttractionList
-          attractions={attractions}
+          attractions={attractionsWithImages ?? attractions}
           onAddToItinerary={handleAddToItinerary}
           isAttractionAdded={isAttractionInItinerary}
           onLongPress={handleAttractionLongPress}

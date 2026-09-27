@@ -38,6 +38,30 @@ describe('AttractionList — add to itinerary', () => {
     expect(screen.getByText('attractions.waitTime')).toBeTruthy();
   });
 
+  it('should render an attraction thumbnail and reachable attribution when available', () => {
+    render(
+      <AttractionList
+        attractions={[
+          {
+            ...operatingAttraction,
+            image: {
+              sourceUrl: 'https://commons.wikimedia.org/wiki/File:Space.jpg',
+              creator: 'Creator',
+              license: { name: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' },
+              attribution: 'Creator',
+              thumbnailUrl: 'https://commons.wikimedia.org/thumb.jpg',
+              fetchedAt: '2026-09-27T12:00:00.000Z',
+            },
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('attraction-image-mk-space-mountain')).toBeTruthy();
+    expect(screen.getByTestId('attraction-image-source-mk-space-mountain')).toBeTruthy();
+    expect(screen.getByText(/Creator/)).toBeTruthy();
+  });
+
   it('should render an "Add to itinerary" button for each attraction when onAddToItinerary is provided', () => {
     render(
       <AttractionList

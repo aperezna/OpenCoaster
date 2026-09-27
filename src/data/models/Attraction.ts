@@ -1,3 +1,5 @@
+import type { ImageMetadata } from '../images/imageMetadata';
+
 export interface Attraction {
   id: string;
   name: string;
@@ -5,4 +7,5 @@ export interface Attraction {
   waitTime: number;
   status: 'operating' | 'closed' | 'down';
   type: 'roller_coaster' | 'water_ride' | 'dark_ride' | 'flat_ride' | 'show' | 'family';
+  image?: ImageMetadata;
 }

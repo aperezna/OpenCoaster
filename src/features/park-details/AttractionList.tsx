@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Image, FlatList, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Attraction } from '../../data/models/Attraction';
 import type { ThemeColors } from '../../theme/colors';
+import { ImageAttribution } from '../../components/ImageAttribution';
 
 const typeKeys: Record<string, string> = {
   roller_coaster: 'attractions.typeRollerCoaster',
@@ -54,72 +55,107 @@ export function AttractionList({
         data={attractions}
         keyExtractor={(item) => item.id}
         scrollEnabled={false}
-        renderItem={({ item }) => {
-          const isAdded = isAttractionAdded?.(item.id) ?? false;
-          const showAdd = onAddToItinerary && !isAdded;
-          const isMonitored = monitoredIds?.has(item.id) ?? false;
-
-          return (
-            <Pressable
-              testID={`attraction-${item.id}`}
-              style={styles.item}
-              onLongPress={onLongPress ? () => onLongPress(item) : undefined}
-              disabled={!onLongPress}
-            >
-              <View style={styles.itemContent}>
-                <View style={styles.itemLeft}>
-                  <View style={styles.nameRow}>
-                    <Text style={styles.attractionName}>{item.name}</Text>
-                    {isMonitored && (
-                      <Text
-                        testID={`bell-indicator-${item.id}`}
-                        style={styles.bellIcon}
-                        accessibilityLabel={t('attractions.bellIndicator')}
-                      >
-                        🔔
-                      </Text>
-                    )}
-                  </View>
-                  <Text style={styles.attractionType}>{t(typeKeys[item.type] ?? item.type)}</Text>
-                </View>
-                <View style={styles.itemRight}>
-                  <View
-                    style={[
-                      styles.statusDot,
-                      { backgroundColor: statusColors[item.status] ?? '#999' },
-                    ]}
-                  />
-                  <Text style={[styles.waitTime, item.waitTime > 30 && styles.waitTimeLong]}>
-                    {item.status === 'operating'
-                      ? t('attractions.waitTime', { time: item.waitTime })
-                      : item.status === 'closed'
-                        ? t('attractions.closed')
-                        : t('attractions.outOfService')}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.itemActions}>
-                {isAdded && (
-                  <View testID={`added-indicator-${item.id}`} style={styles.addedBadge}>
-                    <Text style={styles.addedText}>{t('attractions.added')}</Text>
-                  </View>
-                )}
-                {showAdd && (
-                  <TouchableOpacity
-                    testID={`add-to-itinerary-${item.id}`}
-                    style={styles.addButton}
-                    onPress={() => onAddToItinerary(item)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.addButtonText}>{t('attractions.addToItinerary')}</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </Pressable>
-          );
-        }}
+        renderItem={({ item }) => (
+          <AttractionRow
+            item={item}
+            isAdded={isAttractionAdded?.(item.id) ?? false}
+            showAdd={Boolean(onAddToItinerary && !(isAttractionAdded?.(item.id) ?? false))}
+            isMonitored={monitoredIds?.has(item.id) ?? false}
+            onAddToItinerary={onAddToItinerary}
+            onLongPress={onLongPress}
+            styles={styles}
+            t={t}
+          />
+        )}
       />
     </View>
+  );
+}
+
+function AttractionRow({
+  item,
+  isAdded,
+  showAdd,
+  isMonitored,
+  onAddToItinerary,
+  onLongPress,
+  styles,
+  t,
+}: {
+  item: Attraction;
+  isAdded: boolean;
+  showAdd: boolean;
+  isMonitored: boolean;
+  onAddToItinerary?: (attraction: Attraction) => void;
+  onLongPress?: (attraction: Attraction) => void;
+  styles: ReturnType<typeof createStyles>;
+  t: (key: string, options?: Record<string, unknown>) => string;
+}): React.JSX.Element {
+  const displayImage = item.image;
+  return (
+    <Pressable
+      testID={`attraction-${item.id}`}
+      style={styles.item}
+      onLongPress={onLongPress ? () => onLongPress(item) : undefined}
+      disabled={!onLongPress}
+    >
+      {displayImage ? (
+        <Image
+          testID={`attraction-image-${item.id}`}
+          source={{ uri: displayImage.thumbnailUrl }}
+          style={styles.image}
+        />
+      ) : null}
+      <View style={styles.itemContent}>
+        <View style={styles.itemLeft}>
+          <View style={styles.nameRow}>
+            <Text style={styles.attractionName}>{item.name}</Text>
+            {isMonitored && (
+              <Text
+                testID={`bell-indicator-${item.id}`}
+                style={styles.bellIcon}
+                accessibilityLabel={t('attractions.bellIndicator')}
+              >
+                🔔
+              </Text>
+            )}
+          </View>
+          <Text style={styles.attractionType}>{t(typeKeys[item.type] ?? item.type)}</Text>
+        </View>
+        <View style={styles.itemRight}>
+          <View
+            style={[styles.statusDot, { backgroundColor: statusColors[item.status] ?? '#999' }]}
+          />
+          <Text style={[styles.waitTime, item.waitTime > 30 && styles.waitTimeLong]}>
+            {item.status === 'operating'
+              ? t('attractions.waitTime', { time: item.waitTime })
+              : item.status === 'closed'
+                ? t('attractions.closed')
+                : t('attractions.outOfService')}
+          </Text>
+        </View>
+      </View>
+      {displayImage ? (
+        <ImageAttribution image={displayImage} testID={`attraction-image-source-${item.id}`} />
+      ) : null}
+      <View style={styles.itemActions}>
+        {isAdded && (
+          <View testID={`added-indicator-${item.id}`} style={styles.addedBadge}>
+            <Text style={styles.addedText}>{t('attractions.added')}</Text>
+          </View>
+        )}
+        {showAdd && (
+          <TouchableOpacity
+            testID={`add-to-itinerary-${item.id}`}
+            style={styles.addButton}
+            onPress={() => onAddToItinerary?.(item)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.addButtonText}>{t('attractions.addToItinerary')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </Pressable>
   );
 }
 
@@ -154,6 +190,12 @@ function createStyles(colors: ThemeColors) {
       shadowOpacity: 0.05,
       shadowRadius: 2,
       elevation: 1,
+    },
+    image: {
+      width: '100%',
+      height: 120,
+      borderRadius: 6,
+      marginBottom: 8,
     },
     itemContent: {
       flexDirection: 'row',

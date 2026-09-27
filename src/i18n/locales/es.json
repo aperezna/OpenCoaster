@@ -28,6 +28,8 @@
   "parkDetail.loadError": "No se pudo cargar la información del parque.",
   "parkDetail.sectionUnavailable": "Esta sección no está disponible temporalmente.",
   "parkDetail.noPhoto": "Sin foto disponible",
+  "images.source": "Ver fuente original",
+  "images.openSource": "Abrir fuente de la imagen",
   "parkDetail.directions": "Cómo llegar",
   "parkDetail.planVisit": "Planificar visita",
   "parkDetail.shareTitle": "{parkName} · {city}, {country}",
