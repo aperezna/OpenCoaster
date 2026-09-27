@@ -13,6 +13,16 @@ import type {
 } from '../../../data/providers/ParkDiscoveryProvider';
 import type { ParkSummary } from '../../../data/models/ParkSummary';
 
+jest.mock('../LeafletMap', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return {
+    LeafletMap: (props: Record<string, unknown>) =>
+      React.createElement(View, { ...props, testID: 'discovery-map' }),
+  };
+});
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -123,6 +133,16 @@ describe('DiscoveryScreen', () => {
   it('should render the map view', async () => {
     await renderAndFlush();
     expect(screen.getByTestId('discovery-map')).toBeTruthy();
+  });
+
+  it('passes active-language map labels to LeafletMap', async () => {
+    await renderAndFlush();
+
+    const map = screen.getByTestId('discovery-map');
+
+    expect(map.props.detailButtonLabel).toBe('map.seeMore');
+    expect(map.props.attributionLabel).toBe('map.attribution');
+    expect(map.props.fallbackMessage).toBe('map.unavailable');
   });
 
   it('should render the floating search bar', async () => {

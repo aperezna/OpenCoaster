@@ -1,6 +1,7 @@
 import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+import { useTranslation } from 'react-i18next';
 import type { ParkSummary } from '../../data/models/ParkSummary';
 import ErrorState from '../../components/ErrorState';
 
@@ -11,8 +12,6 @@ import ErrorState from '../../components/ErrorState';
 const LEAFLET_VERSION = '1.9.4';
 const CLUSTER_VERSION = '1.5.3';
 const MAP_READY_TIMEOUT_MS = 5000;
-const MAP_FALLBACK_MESSAGE =
-  'Interactive map is unavailable right now. You can still search parks and open park details.';
 
 function buildMapHtml(
   initialRegion: {
@@ -21,9 +20,10 @@ function buildMapHtml(
     latitudeDelta: number;
     longitudeDelta: number;
   },
-  strings?: { detailButton?: string },
+  strings?: { detailButton?: string; attribution?: string },
 ): string {
-  const detailButton = strings?.detailButton ?? 'Ver más';
+  const detailButton = escapeHtml(strings?.detailButton ?? '');
+  const attribution = escapeHtml(strings?.attribution ?? '');
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -84,7 +84,7 @@ function buildMapHtml(
 
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors',
+        attribution: '&copy; ${attribution}',
       }).addTo(map);
 
       var clusterGroup = L.markerClusterGroup({
@@ -125,7 +125,7 @@ function buildMapHtml(
               if (park.distanceText) {
                 popupHtml += '<div class="popup-distance">' + park.distanceText + '</div>';
               }
-              popupHtml += '<button class="popup-btn" id="view-park-' + park.id + '">' + detailButton + '</button>' +
+              popupHtml += '<button class="popup-btn" id="view-park-' + park.id + '">${detailButton}</button>' +
                 '</div>';
               marker.bindPopup(popupHtml);
 
@@ -181,6 +181,15 @@ function buildMapHtml(
 </html>`;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -230,6 +239,8 @@ interface LeafletMapProps {
   onMarkerPress: (parkId: string) => void;
   userLocation?: { latitude: number; longitude: number } | null;
   detailButtonLabel?: string;
+  fallbackMessage?: string;
+  attributionLabel?: string;
   testID?: string;
 }
 
@@ -243,8 +254,11 @@ export function LeafletMap({
   onMarkerPress,
   userLocation,
   detailButtonLabel,
+  fallbackMessage,
+  attributionLabel,
   testID,
 }: LeafletMapProps): React.JSX.Element {
+  const { t } = useTranslation();
   const webViewRef = useRef<WebView>(null);
   const isReadyRef = useRef(false);
   const mapReadyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -364,7 +378,10 @@ export function LeafletMap({
     [clearMapReadyTimeout, markMapFailed, markers, onMarkerPress, userLocation, sendToMap],
   );
 
-  const html = buildMapHtml(initialRegion, { detailButton: detailButtonLabel });
+  const html = buildMapHtml(initialRegion, {
+    detailButton: detailButtonLabel ?? t('map.seeMore'),
+    attribution: attributionLabel ?? t('map.attribution'),
+  });
 
   useEffect(() => {
     isReadyRef.current = false;
@@ -385,7 +402,7 @@ export function LeafletMap({
       {hasMapFailure ? (
         <ErrorState
           testID={testID ? `${testID}-fallback` : 'leaflet-map-fallback'}
-          message={MAP_FALLBACK_MESSAGE}
+          message={fallbackMessage ?? t('map.unavailable')}
           onRetry={handleRetry}
         />
       ) : (

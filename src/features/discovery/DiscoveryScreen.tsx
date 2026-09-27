@@ -201,6 +201,8 @@ export function DiscoveryScreen({
         onMarkerPress={handleSelectPark}
         userLocation={userCoords}
         detailButtonLabel={t('map.seeMore')}
+        fallbackMessage={t('map.unavailable')}
+        attributionLabel={t('map.attribution')}
       />
 
       {/* Proximity toggle */}

@@ -44,6 +44,15 @@ jest.mock('../../visit-planner/useItineraries', () => ({
   }),
 }));
 
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => (key === 'notifications.minutes' ? 'min' : key),
+    i18n: { language: 'en' },
+    ready: true,
+  }),
+  I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 jest.mock('../../../i18n/useLanguage', () => ({
   useLanguage: () => ({
     language: 'en',

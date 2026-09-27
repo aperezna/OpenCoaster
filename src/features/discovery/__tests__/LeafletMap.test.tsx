@@ -33,13 +33,16 @@ const MARKERS = [
   },
 ];
 
-function renderMap() {
+function renderMap(overrides: Partial<React.ComponentProps<typeof LeafletMap>> = {}) {
   return render(
     <LeafletMap
       testID="leaflet-map"
       initialRegion={INITIAL_REGION}
       markers={MARKERS}
       onMarkerPress={jest.fn()}
+      fallbackMessage="Translated map fallback"
+      attributionLabel="Translated attribution"
+      {...overrides}
     />,
   );
 }
@@ -64,11 +67,20 @@ describe('LeafletMap', () => {
     });
 
     expect(screen.getByTestId('leaflet-map-fallback')).toBeTruthy();
-    expect(
-      screen.getByText(
-        'Interactive map is unavailable right now. You can still search parks and open park details.',
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText('Translated map fallback')).toBeTruthy();
+  });
+
+  it('uses translated labels in the embedded map HTML and escapes them', () => {
+    renderMap({
+      detailButtonLabel: 'Voir <details>',
+      attributionLabel: 'Attribution & contributors',
+    });
+
+    const html = screen.getByTestId('leaflet-map-webview').props.source.html as string;
+
+    expect(html).toContain('>Voir &lt;details&gt;</button>');
+    expect(html).toContain('&copy; Attribution &amp; contributors');
+    expect(html).not.toContain('OpenStreetMap contributors');
   });
 
   it('shows a visible fallback when the map never becomes ready', () => {

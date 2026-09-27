@@ -217,8 +217,8 @@ export function ProfileScreen(): React.JSX.Element {
               >
                 <Text style={styles.itineraryParkName}>{item.parkName}</Text>
                 <Text style={styles.itineraryMeta}>
-                  {item.date ?? 'Date TBD'} · {item.items.length} attraction
-                  {item.items.length !== 1 ? 's' : ''}
+                  {item.date ?? t('visitPlanner.dateTbd')} ·{' '}
+                  {t('visitPlanner.attractionsCount', { count: item.items.length })}
                 </Text>
               </TouchableOpacity>
             )}
@@ -242,7 +242,7 @@ export function ProfileScreen(): React.JSX.Element {
                       testID={`monitored-threshold-${entry.attractionId}`}
                       style={styles.monitoredThreshold}
                     >
-                      {entry.thresholdMin} min
+                      {entry.thresholdMin} {t('notifications.minutes')}
                     </Text>
                   </View>
                   <TouchableOpacity

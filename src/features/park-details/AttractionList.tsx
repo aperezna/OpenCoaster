@@ -91,7 +91,7 @@ export function AttractionList({
                   />
                   <Text style={[styles.waitTime, item.waitTime > 30 && styles.waitTimeLong]}>
                     {item.status === 'operating'
-                      ? `${item.waitTime} min`
+                      ? t('attractions.waitTime', { time: item.waitTime })
                       : item.status === 'closed'
                         ? t('attractions.closed')
                         : t('attractions.outOfService')}

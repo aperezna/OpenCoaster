@@ -174,7 +174,7 @@ describe('ItineraryDetailScreen', () => {
 
     it('should show wait time for operating attractions', () => {
       render(<ItineraryDetailScreen />);
-      expect(screen.getByText('15 min')).toBeTruthy();
+      expect(screen.getByText('attractions.waitTime')).toBeTruthy();
     });
 
     it('should show translated status for closed attractions', () => {

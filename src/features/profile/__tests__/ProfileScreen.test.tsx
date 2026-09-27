@@ -348,10 +348,10 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Epcot')).toBeTruthy();
     // Date display — RTL renders meta as a single Text node, use regex matching
     expect(screen.getByText(/2025-06-15/)).toBeTruthy();
-    expect(screen.getByText(/Date TBD/)).toBeTruthy();
+    expect(screen.getByText(/profile\.itineraries/)).toBeTruthy();
+    expect(screen.getByText(/visitPlanner\.dateTbd/)).toBeTruthy();
     // Attraction counts
-    expect(screen.getByText(/2 attractions/)).toBeTruthy();
-    expect(screen.getByText(/3 attractions/)).toBeTruthy();
+    expect(screen.getAllByText(/visitPlanner\.attractionsCount/)).toHaveLength(2);
   });
 
   it('should navigate to ItineraryDetail when an itinerary is tapped', async () => {
@@ -404,8 +404,12 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Disneyland Park')).toBeTruthy();
     expect(screen.getByText('Space Mountain')).toBeTruthy();
     expect(screen.getByText('Big Thunder Mountain')).toBeTruthy();
-    expect(screen.getByTestId('monitored-threshold-mk-space-mountain')).toHaveTextContent('30 min');
-    expect(screen.getByTestId('monitored-threshold-dlp-big-thunder')).toHaveTextContent('20 min');
+    expect(screen.getByTestId('monitored-threshold-mk-space-mountain')).toHaveTextContent(
+      '30 notifications.minutes',
+    );
+    expect(screen.getByTestId('monitored-threshold-dlp-big-thunder')).toHaveTextContent(
+      '20 notifications.minutes',
+    );
   });
 
   it('should remove a monitored attraction from the section', async () => {

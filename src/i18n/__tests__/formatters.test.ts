@@ -1,4 +1,14 @@
 import { formatDate, formatDistance, formatWait } from '../formatters';
+import i18next from 'i18next';
+import { initI18n } from '../config';
+
+beforeAll(async () => {
+  await initI18n();
+});
+
+afterAll(async () => {
+  await i18next.changeLanguage('en');
+});
 
 // ---------------------------------------------------------------------------
 // formatDate
@@ -22,6 +32,16 @@ describe('formatDate', () => {
     expect(formatDate(date, 'en')).toBe('1/5/2025');
     expect(formatDate(date, 'es')).toBe('5/1/2025');
   });
+
+  it('should use the active Spanish language by default', async () => {
+    await i18next.changeLanguage('es');
+    expect(formatDate(new Date(2026, 6, 13))).toBe('13/7/2026');
+  });
+
+  it('should preserve an explicit English locale override', async () => {
+    await i18next.changeLanguage('es');
+    expect(formatDate(new Date(2026, 6, 13), 'en')).toBe('7/13/2026');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -36,7 +56,7 @@ describe('formatDistance', () => {
 
   it('should show kilometers for distances 1000m or more', () => {
     expect(formatDistance(1500, 'en')).toBe('1.5 km');
-    expect(formatDistance(1500, 'es')).toBe('1.5 km');
+    expect(formatDistance(1500, 'es')).toBe('1,5 km');
   });
 
   it('should handle exact 1000m boundary', () => {
@@ -49,6 +69,16 @@ describe('formatDistance', () => {
 
   it('should handle large distances', () => {
     expect(formatDistance(12345, 'en')).toBe('12.3 km');
+  });
+
+  it('should use Spanish decimal formatting by default', async () => {
+    await i18next.changeLanguage('es');
+    expect(formatDistance(1500)).toBe('1,5 km');
+  });
+
+  it('should preserve an explicit English locale override', async () => {
+    await i18next.changeLanguage('es');
+    expect(formatDistance(1500, 'en')).toBe('1.5 km');
   });
 });
 
@@ -70,7 +100,7 @@ describe('formatWait', () => {
   });
 
   it('should format plural minutes in es', () => {
-    expect(formatWait(5, 'es')).toBe('5 mins');
+    expect(formatWait(5, 'es')).toBe('5 min');
   });
 
   it('should handle zero minutes', () => {
@@ -79,5 +109,10 @@ describe('formatWait', () => {
 
   it('should handle large wait times', () => {
     expect(formatWait(120, 'en')).toBe('120 mins');
+  });
+
+  it('should use Spanish pluralization by default', async () => {
+    await i18next.changeLanguage('es');
+    expect(formatWait(5)).toBe('5 min');
   });
 });

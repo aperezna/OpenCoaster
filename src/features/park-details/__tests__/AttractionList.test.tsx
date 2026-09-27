@@ -32,6 +32,12 @@ const attractions: Attraction[] = [operatingAttraction, closedAttraction];
 // ---------------------------------------------------------------------------
 
 describe('AttractionList — add to itinerary', () => {
+  it('should translate operating wait times', () => {
+    render(<AttractionList attractions={[operatingAttraction]} />);
+
+    expect(screen.getByText('attractions.waitTime')).toBeTruthy();
+  });
+
   it('should render an "Add to itinerary" button for each attraction when onAddToItinerary is provided', () => {
     render(
       <AttractionList

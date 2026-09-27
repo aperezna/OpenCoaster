@@ -86,7 +86,7 @@ export function ItineraryDetailScreen(): React.JSX.Element {
       let waitDisplay: string = '—';
       if (attractionInfo) {
         if (attractionInfo.status === 'operating') {
-          waitDisplay = `${attractionInfo.waitTime} min`;
+          waitDisplay = t('attractions.waitTime', { time: attractionInfo.waitTime });
         } else if (attractionInfo.status === 'closed') {
           waitDisplay = t('itineraryDetail.closed');
         } else {
