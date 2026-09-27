@@ -4,6 +4,16 @@ import { QueryClient } from '@tanstack/react-query';
 import { preventAutoHideAsync, hideAsync } from 'expo-splash-screen';
 import { AppInner } from '../../../App';
 
+// The splash tests verify app readiness, not discovery data loading. Keep the
+// navigator shallow so the real discovery query cannot open network handles.
+jest.mock('../../navigation/RootNavigator', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  return {
+    RootNavigator: () => ReactActual.createElement(View, { testID: 'discovery-screen' }),
+  };
+});
+
 // ---------------------------------------------------------------------------
 // Mock the persist layer: the real PersistQueryClientProvider + AsyncStorage
 // persister schedule internal debounce timers that keep Jest's event loop
@@ -88,25 +98,27 @@ describe('SplashScreen — runtime', () => {
   it('calls hideAsync after app is ready (onboarding resolved)', async () => {
     mockGetItem.mockResolvedValue('true');
 
-    render(<AppInner queryClient={createTestQueryClient()} />);
+    const { unmount } = render(<AppInner queryClient={createTestQueryClient()} />);
 
     await waitFor(() => {
       expect(screen.getByTestId('discovery-screen')).toBeTruthy();
     });
 
     expect(hideAsync).toHaveBeenCalled();
+    unmount();
   });
 
   it('still hides splash when onboarding is unseen', async () => {
     mockGetItem.mockResolvedValue(null);
 
-    render(<AppInner queryClient={createTestQueryClient()} />);
+    const { unmount } = render(<AppInner queryClient={createTestQueryClient()} />);
 
     await waitFor(() => {
       expect(screen.getByTestId('onboarding-carousel')).toBeTruthy();
     });
 
     expect(hideAsync).toHaveBeenCalled();
+    unmount();
   });
 
   it('does not call hideAsync while app is still loading', () => {

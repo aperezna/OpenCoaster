@@ -2,6 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useSearchHistory } from '../useSearchHistory';
 import type { StorageAdapter } from '../../../data/cache/storageAdapter';
 import { SyncPromise } from '../../../../test-utils/syncThenable';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ---------------------------------------------------------------------------
 // In-memory adapter for testing (mirrors useFavorites.test.tsx pattern)
@@ -35,6 +36,23 @@ function createInMemoryAdapter(initialData?: string): StorageAdapter {
 // ---------------------------------------------------------------------------
 
 describe('useSearchHistory', () => {
+  it('should keep the real default adapter stable across rerenders', async () => {
+    const getItemMock = AsyncStorage.getItem as jest.Mock;
+    getItemMock.mockClear();
+    const { result, rerender } = renderHook(() => useSearchHistory(), {
+      initialProps: undefined,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    const callsAfterLoad = getItemMock.mock.calls.length;
+    rerender(undefined);
+
+    expect(getItemMock).toHaveBeenCalledTimes(callsAfterLoad);
+  });
+
   describe('load on mount', () => {
     it('should return empty queries when no data is stored', async () => {
       const adapter = createInMemoryAdapter();

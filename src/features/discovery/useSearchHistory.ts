@@ -4,6 +4,7 @@ import { AsyncStorageAdapter } from '../../data/cache/asyncStorageAdapter';
 
 const SEARCH_HISTORY_KEY = 'opencoaster:search-history';
 const MAX_HISTORY = 10;
+const defaultAdapter = new AsyncStorageAdapter();
 
 interface UseSearchHistoryReturn {
   queries: string[];
@@ -12,9 +13,7 @@ interface UseSearchHistoryReturn {
   isLoading: boolean;
 }
 
-export function useSearchHistory(
-  adapter: StorageAdapter = new AsyncStorageAdapter(),
-): UseSearchHistoryReturn {
+export function useSearchHistory(adapter: StorageAdapter = defaultAdapter): UseSearchHistoryReturn {
   const [queries, setQueries] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
