@@ -45,6 +45,7 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 - [x] IMG-8: Make Wikimedia native image requests compatible with CDN hotlink policy.
 - [x] IMG-9: Prefer directly loadable Openverse provider URLs when Wikimedia CDN blocks native images.
 - [x] IMG-10: Version the persisted licensed-image query key after changing provider selection.
+- [x] IMG-11: Add park context and relevance filtering to attraction image searches.
 
 ## Acceptance Criteria
 
@@ -66,8 +67,10 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 ## Progress
 
 - Route: single-writer direct implementation on feature branch `fix/img-6-native-image-fallback`.
-- Current step: IMG-10 implementation complete; the emulator was reusing a 24-hour React Query licensed-image result created before the Openverse selection change. The query key is now versioned so persisted stale Wikimedia metadata cannot mask the new provider behavior.
+- Current step: IMG-11 implementation complete; attraction queries now include park and attraction names, and provider results are conservatively relevance-filtered before orchestration ordering.
 - Root-cause evidence: Emulator logcat continued to report HTTP 403 for `thumb.wikimedia.org` and `upload.wikimedia.org` after IMG-8. The host machine can fetch the same resources, so this is an emulator/native-CDN compatibility boundary rather than invalid metadata.
-- Verification evidence: Strict TDD RED observed for both hook key assertions, followed by GREEN. Focused image/provider/UI suite: 18 suites / 134 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 453 tests passed. `npm run typecheck` passed. `npm run format:check` passed. The implementation commit's lint-staged checks passed; no separate lint run was required for this task. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
+- Verification evidence: Strict TDD RED observed for query construction, title mapping, relevance, and query-key assertions, followed by GREEN. Focused image/provider/UI suite: 5 suites / 43 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 458 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 20 pre-existing warnings and no errors. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
 - Commit identity: `54f8f52` (`fix(images): version licensed image query keys`), following `bbc134b` (`fix(images): prefer directly loadable Openverse URLs`).
-- Remaining limitation: No fresh emulator lookup was run in this work unit, so native runtime confirmation of the new cache namespace remains pending.
+- Commit identity: `46aa051` (`fix(images): filter contextual attraction results`).
+- Relevance rule: normalize query and candidate title, attribution, and source-URL text into deduplicated alphanumeric tokens; for contextual queries with at least two meaningful tokens, retain and stably rank only candidates containing every token. Single-token searches preserve existing provider ordering.
+- Remaining limitation: No fresh emulator detail-screen lookup was run in this work unit; conservative all-token matching can return no image when provider metadata omits part of the park or attraction context.
