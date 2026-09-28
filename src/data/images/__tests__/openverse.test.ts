@@ -21,6 +21,7 @@ describe('OpenverseProvider', () => {
       results: [
         {
           foreign_landing_url: 'https://example.com/source',
+          title: 'Cedar Point roller coaster',
           creator: 'A. Creator',
           license: 'by-sa',
           license_version: '4.0',
@@ -42,6 +43,7 @@ describe('OpenverseProvider', () => {
     await expect(provider.searchImages('  Cedar Point ')).resolves.toEqual([
       {
         sourceUrl: 'https://example.com/source',
+        title: 'Cedar Point roller coaster',
         creator: 'A. Creator',
         license: {
           name: 'CC BY-SA 4.0',
@@ -58,6 +60,26 @@ describe('OpenverseProvider', () => {
     expect(url.searchParams.get('license_type')).toBe('commercial');
     expect(Number(url.searchParams.get('page_size'))).toBeGreaterThan(0);
     expect(Number(url.searchParams.get('page_size'))).toBeLessThanOrEqual(20);
+  });
+
+  it('retains the Openverse record title', async () => {
+    const fetcher = jest.fn().mockResolvedValue({
+      results: [
+        {
+          foreign_landing_url: 'https://example.com/source',
+          title: 'Cedar Point',
+          license: 'cc0',
+          license_url: 'https://creativecommons.org/publicdomain/zero/1.0/',
+          thumbnail: 'https://example.com/thumb.jpg',
+          url: 'https://example.com/image.jpg',
+        },
+      ],
+    });
+    const provider = new OpenverseProvider({ fetcher, cache: new MemoryCache(), now: () => 0 });
+
+    await expect(provider.searchImages('Cedar Point')).resolves.toEqual([
+      expect.objectContaining({ title: 'Cedar Point' }),
+    ]);
   });
 
   it('aborts a request at the configured timeout and does not cache the failure', async () => {

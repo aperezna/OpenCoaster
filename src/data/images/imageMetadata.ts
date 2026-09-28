@@ -5,6 +5,8 @@ export interface ImageLicense {
 
 export interface ImageMetadata {
   sourceUrl: string;
+  /** Optional provider title used to assess whether a result matches a query. */
+  title?: string;
   creator: string;
   license: ImageLicense;
   attribution: string;

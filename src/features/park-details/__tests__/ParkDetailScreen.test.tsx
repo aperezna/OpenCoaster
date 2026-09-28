@@ -1,7 +1,7 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react-native';
-import { ParkDetailScreen } from '../ParkDetailScreen';
+import { ParkDetailScreen, buildAttractionImageQueries } from '../ParkDetailScreen';
 import { FixtureParkDiscoveryProvider } from '../../../data/providers/ParkDiscoveryProvider';
 import { ParkDiscoveryContextProvider } from '../../../data/providers/ParkDiscoveryProviderContext';
 import type { ParkSummary } from '../../../data/models/ParkSummary';
@@ -55,6 +55,26 @@ describe('ParkDetailScreen', () => {
       name: 'Parques',
       params: { parkId: 'magic-kingdom' },
     });
+  });
+
+  it('builds contextual attraction image queries only when park data exists', () => {
+    const attractions = [
+      {
+        id: 'ride',
+        parkId: 'park',
+        name: 'Space Mountain',
+        waitTime: 20,
+        status: 'operating' as const,
+        type: 'roller_coaster' as const,
+      },
+    ];
+
+    expect(buildAttractionImageQueries(undefined, attractions)).toEqual([
+      { query: '', image: undefined },
+    ]);
+    expect(
+      buildAttractionImageQueries({ name: 'Magic Kingdom' } as ParkSummary, attractions),
+    ).toEqual([{ query: 'Magic Kingdom Space Mountain', image: undefined }]);
   });
 
   it('should show skeleton while loading and hide it after data loads', async () => {

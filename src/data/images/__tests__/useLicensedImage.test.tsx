@@ -25,7 +25,7 @@ describe('useLicensedImage', () => {
 
     await waitFor(() => expect(result.current.image).toEqual(image));
     expect(provider.searchImages).toHaveBeenCalledTimes(1);
-    expect(queryClient.getQueryData(['opencoaster', 'licensedImage-v2', 'magic kingdom'])).toEqual(
+    expect(queryClient.getQueryData(['opencoaster', 'licensedImage-v3', 'magic kingdom'])).toEqual(
       image,
     );
     expect(
@@ -53,10 +53,10 @@ describe('useLicensedImage', () => {
     );
 
     await waitFor(() => expect(result.current).toEqual([image, image]));
-    expect(queryClient.getQueryData(['opencoaster', 'licensedImage-v2', 'magic kingdom'])).toEqual(
+    expect(queryClient.getQueryData(['opencoaster', 'licensedImage-v3', 'magic kingdom'])).toEqual(
       image,
     );
-    expect(queryClient.getQueryData(['opencoaster', 'licensedImage-v2', 'space mountain'])).toEqual(
+    expect(queryClient.getQueryData(['opencoaster', 'licensedImage-v3', 'space mountain'])).toEqual(
       image,
     );
     expect(

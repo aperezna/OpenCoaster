@@ -1,8 +1,9 @@
 import { LicensedImageProvider } from '../licensedImageProvider';
 import type { ImageMetadata } from '../imageMetadata';
 
-const image = (sourceUrl: string): ImageMetadata => ({
+const image = (sourceUrl: string, title?: string): ImageMetadata => ({
   sourceUrl,
+  title,
   creator: 'Creator',
   license: { name: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' },
   attribution: 'Creator',
@@ -57,5 +58,36 @@ describe('LicensedImageProvider', () => {
     });
 
     await expect(provider.searchImages('Park')).resolves.toEqual([]);
+  });
+
+  it('ranks and keeps only candidates matching every contextual query token', async () => {
+    const provider = new LicensedImageProvider({
+      commons: {
+        searchImages: jest
+          .fn()
+          .mockResolvedValue([
+            image('https://commons/unrelated', 'Magic Kingdom castle'),
+            image('https://commons/relevant', 'Magic Kingdom Space Mountain'),
+          ]),
+      },
+      openverse: { searchImages: jest.fn().mockResolvedValue([]) },
+    });
+
+    await expect(provider.searchImages('Magic Kingdom Space Mountain')).resolves.toEqual([
+      image('https://commons/relevant', 'Magic Kingdom Space Mountain'),
+    ]);
+  });
+
+  it('rejects candidates with no reliable title, attribution, or source-url match', async () => {
+    const provider = new LicensedImageProvider({
+      commons: {
+        searchImages: jest
+          .fn()
+          .mockResolvedValue([image('https://commons/unrelated', 'Water park')]),
+      },
+      openverse: { searchImages: jest.fn().mockResolvedValue([]) },
+    });
+
+    await expect(provider.searchImages('Magic Kingdom Space Mountain')).resolves.toEqual([]);
   });
 });

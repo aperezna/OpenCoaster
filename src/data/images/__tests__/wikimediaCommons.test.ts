@@ -115,8 +115,28 @@ describe('WikimediaCommonsProvider', () => {
     await expect(provider.searchImages('Park')).resolves.toEqual([
       expect.objectContaining({
         ...compatibleImage,
+        title: 'File:Allowed.jpg',
         fetchedAt: new Date(0).toISOString(),
       }),
+    ]);
+  });
+
+  it('retains the Wikimedia page title', async () => {
+    const provider = new WikimediaCommonsProvider({
+      fetcher: jest.fn().mockResolvedValue(
+        responseFor({
+          Artist: { value: 'A. Creator' },
+          LicenseShortName: { value: 'CC BY 4.0' },
+          LicenseUrl: { value: compatibleImage.license.url },
+        }),
+      ),
+      cache: new MemoryCache(),
+      now: () => 0,
+      throttleMs: 0,
+    });
+
+    await expect(provider.searchImages('Park')).resolves.toEqual([
+      expect.objectContaining({ title: 'File:Park.jpg' }),
     ]);
   });
 

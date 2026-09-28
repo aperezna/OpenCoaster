@@ -20,7 +20,7 @@ interface WikimediaImageInfo {
 }
 
 interface WikimediaResponse {
-  query?: { pages?: Record<string, { imageinfo?: WikimediaImageInfo[] }> };
+  query?: { pages?: Record<string, { title?: string; imageinfo?: WikimediaImageInfo[] }> };
 }
 
 export interface WikimediaCommonsOptions {
@@ -157,6 +157,7 @@ export class WikimediaCommonsProvider {
       return [
         {
           sourceUrl,
+          ...(page.title ? { title: page.title } : {}),
           creator,
           license: { name: licenseName, url: licenseUrl },
           attribution,

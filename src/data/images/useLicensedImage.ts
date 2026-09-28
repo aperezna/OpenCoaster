@@ -4,7 +4,7 @@ import type { ImageMetadata } from './imageMetadata';
 import { LicensedImageProvider, type ImageSearchProvider } from './licensedImageProvider';
 
 const defaultProvider = new LicensedImageProvider();
-const LICENSED_IMAGE_QUERY_KEY_SEGMENT = 'licensedImage-v2';
+const LICENSED_IMAGE_QUERY_KEY_SEGMENT = 'licensedImage-v3';
 
 function licensedImageQueryKey(normalizedQuery: string): readonly string[] {
   return [...OPENCOASTER_KEY_PREFIX, LICENSED_IMAGE_QUERY_KEY_SEGMENT, normalizedQuery];

@@ -9,6 +9,7 @@ const DEFAULT_USER_AGENT = 'OpenCoaster/0.1 (licensed image retrieval)';
 
 interface OpenverseRecord {
   foreign_landing_url?: string;
+  title?: string | null;
   creator?: string | null;
   license?: string | null;
   license_version?: string | null;
@@ -135,6 +136,7 @@ export class OpenverseProvider {
       return [
         {
           sourceUrl,
+          ...(record.title?.trim() ? { title: record.title.trim() } : {}),
           creator,
           license: { name, url: record.license_url.trim() },
           attribution: creator,
