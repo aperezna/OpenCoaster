@@ -42,6 +42,7 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 - [x] IMG-5: Run full validation, document source/licensing behavior, and publish the work unit.
 - [x] IMG-6: Sanitize provider attribution HTML and add resilient native image loading fallback.
 - [x] IMG-7: Capture the native image-loader failure and correct the provider URL shape if needed.
+- [x] IMG-8: Make Wikimedia native image requests compatible with CDN hotlink policy.
 
 ## Acceptance Criteria
 
@@ -63,7 +64,8 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 ## Progress
 
 - Route: single-writer direct implementation on feature branch `fix/img-6-native-image-fallback`.
-- Current step: IMG-7 complete; Wikimedia returned HTTP 403 for both `thumb.wikimedia.org` and `upload.wikimedia.org` image candidates because native React Native Image requests lacked a descriptive User-Agent. The existing provider URL shape was retained.
-- Verification evidence: Strict TDD RED observed for missing request headers, followed by GREEN. Focused image/provider/park-detail/attraction/discovery suite: 11 suites / 122 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 450 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 0 errors and 20 pre-existing warnings. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
-- Commit identity: `2f11ea1` (`fix(images): send descriptive Wikimedia request header`).
-- Next step: none for IMG-7; future work may perform a clean emulator verification with the updated native request headers.
+- Current step: IMG-8 complete; Wikimedia image requests now use a complete identifiable User-Agent, send `Referer: https://commons.wikimedia.org/` only to Wikimedia hosts, and remove only `utm_*` query parameters before native loading.
+- Root-cause evidence: Emulator logcat continued to report HTTP 403 for `thumb.wikimedia.org` and `upload.wikimedia.org` after IMG-7, despite the prior descriptive User-Agent. The remaining request shape included Wikimedia API tracking parameters (`utm_source`, `utm_campaign`, and `utm_content`), and the request lacked an explicit Commons referer.
+- Verification evidence: Strict TDD RED observed for the new User-Agent, Wikimedia referer, and URL normalization assertions, followed by GREEN. Focused image suite: 6 suites / 30 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 452 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 0 errors and 20 pre-existing warnings. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
+- Commit identity: `60d6df5` (`fix(images): harden Wikimedia native requests`).
+- Next step: clean emulator verification is still recommended; no emulator runtime was available in this session.
