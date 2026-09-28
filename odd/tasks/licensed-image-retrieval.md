@@ -64,5 +64,5 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 - Route: single-writer direct implementation on feature branch `fix/img-6-native-image-fallback`.
 - Current step: IMG-6 complete; Wikimedia attribution is normalized before native rendering, and all affected park/attraction image paths use the shared fallback component.
 - Verification evidence: Strict TDD RED observed before implementation (missing sanitizer/component failures). Focused image/provider/park-detail/attraction/discovery suite: 6 suites / 62 tests passed. Full `npm test -- --runInBand`: 54 suites / 450 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 0 errors and 20 pre-existing warnings. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains. Focused Jest runs still report the repository's existing open-handle diagnostic after passing.
-- Commit identity: `edefded` (`fix(images): normalize attribution and add native fallback`).
+- Commit identity: `f3b0d97` (`fix(images): normalize attribution and add native fallback`).
 - Next step: validate the emulator presentation of Wikimedia thumbnails and fallback behavior.
