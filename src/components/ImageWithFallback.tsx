@@ -37,7 +37,10 @@ export function ImageWithFallback({
   return (
     <Image
       testID={testID}
-      source={{ uri: source }}
+      source={{
+        uri: source,
+        headers: { 'User-Agent': 'OpenCoaster/0.1 (licensed image retrieval)' },
+      }}
       style={style}
       onError={() => setSourceIndex((index) => index + 1)}
     />

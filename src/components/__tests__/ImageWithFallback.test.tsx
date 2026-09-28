@@ -3,13 +3,18 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ImageWithFallback } from '../ImageWithFallback';
 
 describe('ImageWithFallback', () => {
+  const expectedHeaders = { 'User-Agent': 'OpenCoaster/0.1 (licensed image retrieval)' };
+
   it('renders the first valid URL and keeps it after a successful load', () => {
     render(
       <ImageWithFallback testID="park-image" sources={['https://cdn.example/thumbnail.jpg']} />,
     );
 
     const image = screen.getByTestId('park-image');
-    expect(image.props.source).toEqual({ uri: 'https://cdn.example/thumbnail.jpg' });
+    expect(image.props.source).toEqual({
+      uri: 'https://cdn.example/thumbnail.jpg',
+      headers: expectedHeaders,
+    });
     fireEvent(image, 'onLoad');
     expect(screen.getByTestId('park-image')).toBeTruthy();
   });
@@ -25,6 +30,7 @@ describe('ImageWithFallback', () => {
     fireEvent(screen.getByTestId('park-image'), 'onError');
     expect(screen.getByTestId('park-image').props.source).toEqual({
       uri: 'https://cdn.example/original.jpg',
+      headers: expectedHeaders,
     });
   });
 
