@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, Image, FlatList, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Attraction } from '../../data/models/Attraction';
 import type { ThemeColors } from '../../theme/colors';
 import { ImageAttribution } from '../../components/ImageAttribution';
+import { ImageWithFallback } from '../../components/ImageWithFallback';
 
 const typeKeys: Record<string, string> = {
   roller_coaster: 'attractions.typeRollerCoaster',
@@ -100,9 +101,9 @@ function AttractionRow({
       disabled={!onLongPress}
     >
       {displayImage ? (
-        <Image
+        <ImageWithFallback
           testID={`attraction-image-${item.id}`}
-          source={{ uri: displayImage.thumbnailUrl }}
+          sources={[displayImage.thumbnailUrl, displayImage.originalUrl]}
           style={styles.image}
         />
       ) : null}

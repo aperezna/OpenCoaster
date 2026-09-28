@@ -54,6 +54,7 @@ describe('ParkResultList', () => {
 
     await render(<ParkResultList parks={parksWithImage} onParkPress={() => {}} />);
     expect(screen.getByTestId('park-image-park-1')).toBeTruthy();
+    expect(screen.getByTestId('park-image-source-park-1')).toBeTruthy();
   });
 
   it('should call onParkPress when a park item is pressed', async () => {

@@ -40,6 +40,7 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 - [x] IMG-3: Implement Openverse fallback and deterministic provider orchestration.
 - [x] IMG-4: Integrate image lookup into park/attraction data and UI with attribution/fallback states.
 - [x] IMG-5: Run full validation, document source/licensing behavior, and publish the work unit.
+- [x] IMG-6: Sanitize provider attribution HTML and add resilient native image loading fallback.
 
 ## Acceptance Criteria
 
@@ -60,7 +61,8 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 
 ## Progress
 
-- Route: delegated direct implementation; the change spans multiple non-trivial files and external-provider behavior.
-- Current step: IMG-5 complete; Wikimedia Commons is primary, Openverse is a commercial-compatible fallback, and all displayed image metadata retains source, creator, license, attribution, and fetched timestamp. RCDB is intentionally excluded because its terms do not authorize constructing applications from its content without written permission.
-- Verification evidence: 53 suites / 445 tests passed; typecheck passed; format check passed; lint passed with 20 existing warnings and 0 errors. Expected React console diagnostics remain in error-path tests, and one existing Leaflet `act(...)` warning remains.
-- Next step: commit and publish this work unit.
+- Route: single-writer direct implementation on feature branch `fix/img-6-native-image-fallback`.
+- Current step: IMG-6 complete; Wikimedia attribution is normalized before native rendering, and all affected park/attraction image paths use the shared fallback component.
+- Verification evidence: Strict TDD RED observed before implementation (missing sanitizer/component failures). Focused image/provider/park-detail/attraction/discovery suite: 6 suites / 62 tests passed. Full `npm test -- --runInBand`: 54 suites / 450 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 0 errors and 20 pre-existing warnings. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains. Focused Jest runs still report the repository's existing open-handle diagnostic after passing.
+- Commit identity: `edefded` (`fix(images): normalize attribution and add native fallback`).
+- Next step: validate the emulator presentation of Wikimedia thumbnails and fallback behavior.

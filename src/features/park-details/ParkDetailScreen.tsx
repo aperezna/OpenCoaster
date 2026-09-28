@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  Image,
   ScrollView,
   RefreshControl,
   TouchableOpacity,
@@ -40,6 +39,7 @@ import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigat
 import type { Attraction } from '../../data/models/Attraction';
 import { useLicensedImage, useLicensedImages } from '../../data/images/useLicensedImage';
 import { ImageAttribution } from '../../components/ImageAttribution';
+import { ImageWithFallback } from '../../components/ImageWithFallback';
 
 const DEFAULT_PARK_ID = '75ea578a-adc8-4116-a54d-dccb60765ef9'; // Magic Kingdom Park
 
@@ -270,12 +270,15 @@ export function ParkDetailScreen(): React.JSX.Element {
       {/* Photo header */}
       {park.photoUrl || park.image || licensedParkImage.image ? (
         <>
-          <Image
+          <ImageWithFallback
             testID="park-photo"
-            source={{
-              uri:
-                park.image?.thumbnailUrl ?? licensedParkImage.image?.thumbnailUrl ?? park.photoUrl,
-            }}
+            sources={[
+              park.image?.thumbnailUrl,
+              park.image?.originalUrl,
+              licensedParkImage.image?.thumbnailUrl,
+              licensedParkImage.image?.originalUrl,
+              park.photoUrl,
+            ]}
             style={styles.photo}
           />
           {(park.image ?? licensedParkImage.image) ? (
