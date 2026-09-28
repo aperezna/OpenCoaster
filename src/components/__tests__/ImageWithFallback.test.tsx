@@ -3,7 +3,9 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ImageWithFallback } from '../ImageWithFallback';
 
 describe('ImageWithFallback', () => {
-  const expectedHeaders = { 'User-Agent': 'OpenCoaster/0.1 (licensed image retrieval)' };
+  const expectedHeaders = {
+    'User-Agent': 'OpenCoaster/0.1 (https://github.com/aperezna/OpenCoaster)',
+  };
 
   it('renders the first valid URL and keeps it after a successful load', () => {
     render(
@@ -30,6 +32,39 @@ describe('ImageWithFallback', () => {
     fireEvent(screen.getByTestId('park-image'), 'onError');
     expect(screen.getByTestId('park-image').props.source).toEqual({
       uri: 'https://cdn.example/original.jpg',
+      headers: expectedHeaders,
+    });
+  });
+
+  it('normalizes Wikimedia image URLs and sends compatible request headers', () => {
+    render(
+      <ImageWithFallback
+        testID="wikimedia-image"
+        sources={[
+          'https://thumb.wikimedia.org/example.jpg?width=640&utm_source=commons&utm_campaign=api',
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('wikimedia-image').props.source).toEqual({
+      uri: 'https://thumb.wikimedia.org/example.jpg?width=640',
+      headers: {
+        ...expectedHeaders,
+        Referer: 'https://commons.wikimedia.org/',
+      },
+    });
+  });
+
+  it('preserves non-tracking query parameters and does not alter non-Wikimedia URLs', () => {
+    render(
+      <ImageWithFallback
+        testID="external-image"
+        sources={['https://cdn.example/thumbnail.jpg?width=640&utm_source=keep-this-external-url']}
+      />,
+    );
+
+    expect(screen.getByTestId('external-image').props.source).toEqual({
+      uri: 'https://cdn.example/thumbnail.jpg?width=640&utm_source=keep-this-external-url',
       headers: expectedHeaders,
     });
   });
