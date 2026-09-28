@@ -43,6 +43,7 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 - [x] IMG-6: Sanitize provider attribution HTML and add resilient native image loading fallback.
 - [x] IMG-7: Capture the native image-loader failure and correct the provider URL shape if needed.
 - [x] IMG-8: Make Wikimedia native image requests compatible with CDN hotlink policy.
+- [x] IMG-9: Prefer directly loadable Openverse provider URLs when Wikimedia CDN blocks native images.
 
 ## Acceptance Criteria
 
@@ -64,8 +65,8 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 ## Progress
 
 - Route: single-writer direct implementation on feature branch `fix/img-6-native-image-fallback`.
-- Current step: IMG-8 complete; Wikimedia image requests now use a complete identifiable User-Agent, send `Referer: https://commons.wikimedia.org/` only to Wikimedia hosts, and remove only `utm_*` query parameters before native loading.
-- Root-cause evidence: Emulator logcat continued to report HTTP 403 for `thumb.wikimedia.org` and `upload.wikimedia.org` after IMG-7, despite the prior descriptive User-Agent. The remaining request shape included Wikimedia API tracking parameters (`utm_source`, `utm_campaign`, and `utm_content`), and the request lacked an explicit Commons referer.
-- Verification evidence: Strict TDD RED observed for the new User-Agent, Wikimedia referer, and URL normalization assertions, followed by GREEN. Focused image suite: 6 suites / 30 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 452 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 0 errors and 20 pre-existing warnings. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
-- Commit identity: `60d6df5` (`fix(images): harden Wikimedia native requests`).
-- Next step: clean emulator verification is still recommended; no emulator runtime was available in this session.
+- Current step: IMG-9 complete; directly loadable non-Wikimedia Openverse URLs are preferred while Wikimedia remains a valid catalog and image fallback.
+- Root-cause evidence: Emulator logcat continued to report HTTP 403 for `thumb.wikimedia.org` and `upload.wikimedia.org` after IMG-8. The host machine can fetch the same resources, so this is an emulator/native-CDN compatibility boundary rather than invalid metadata.
+- Verification evidence: Strict TDD RED observed for Openverse native URL mapping and provider ordering, followed by GREEN. Focused image/provider/UI suite: 9 suites / 71 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 452 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 0 errors and 20 pre-existing warnings. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
+- Commit identity: `bbc134b` (`fix(images): prefer directly loadable Openverse URLs`).
+- Remaining limitation: the clean Android emulator was not available for a new end-to-end image load; the implementation follows the confirmed live API evidence and preserves native fallback behavior.
