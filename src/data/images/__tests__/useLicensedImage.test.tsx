@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { useLicensedImage } from '../useLicensedImage';
+import { useLicensedImage, useLicensedImages } from '../useLicensedImage';
 import type { ImageMetadata } from '../imageMetadata';
 
 const image: ImageMetadata = {
@@ -25,9 +25,43 @@ describe('useLicensedImage', () => {
 
     await waitFor(() => expect(result.current.image).toEqual(image));
     expect(provider.searchImages).toHaveBeenCalledTimes(1);
+    expect(queryClient.getQueryData(['opencoaster', 'licensedImage-v2', 'magic kingdom'])).toEqual(
+      image,
+    );
+    expect(
+      queryClient.getQueryData(['opencoaster', 'licensedImage', 'magic kingdom']),
+    ).toBeUndefined();
 
     await waitFor(() => expect(result.current.image).toEqual(image));
     expect(provider.searchImages).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the versioned query key for multiple items and returns provider data', async () => {
+    const secondImage = {
+      ...image,
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Ride.jpg',
+    };
+    const provider = { searchImages: jest.fn().mockResolvedValue([image, secondImage]) };
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const { result } = renderHook(
+      () => useLicensedImages([{ query: 'Magic Kingdom' }, { query: 'Space Mountain' }], provider),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current).toEqual([image, image]));
+    expect(queryClient.getQueryData(['opencoaster', 'licensedImage-v2', 'magic kingdom'])).toEqual(
+      image,
+    );
+    expect(queryClient.getQueryData(['opencoaster', 'licensedImage-v2', 'space mountain'])).toEqual(
+      image,
+    );
+    expect(
+      queryClient.getQueryData(['opencoaster', 'licensedImage', 'magic kingdom']),
+    ).toBeUndefined();
   });
 
   it('degrades to no image when lookup fails', async () => {
