@@ -1,16 +1,10 @@
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import type { ParkSummary } from '../../data/models/ParkSummary';
 import type { ThemeColors } from '../../theme/colors';
+import { ImageWithFallback } from '../../components/ImageWithFallback';
+import { ImageAttribution } from '../../components/ImageAttribution';
 
 interface ParkResultListProps {
   parks: ParkSummary[];
@@ -61,7 +55,6 @@ function ParkResultItem({
   styles: ReturnType<typeof createStyles>;
 }) {
   const displayImage = item.image;
-  const imageUrl = displayImage?.thumbnailUrl ?? item.photoUrl;
 
   return (
     <TouchableOpacity
@@ -69,8 +62,15 @@ function ParkResultItem({
       style={styles.item}
       onPress={() => onPress(item.id)}
     >
-      {imageUrl ? (
-        <Image testID={`park-image-${item.id}`} source={{ uri: imageUrl }} style={styles.image} />
+      {displayImage?.thumbnailUrl || displayImage?.originalUrl || item.photoUrl ? (
+        <ImageWithFallback
+          testID={`park-image-${item.id}`}
+          sources={[displayImage?.thumbnailUrl, displayImage?.originalUrl, item.photoUrl]}
+          style={styles.image}
+        />
+      ) : null}
+      {displayImage ? (
+        <ImageAttribution image={displayImage} testID={`park-image-source-${item.id}`} />
       ) : null}
       <Text style={styles.parkName}>{item.name}</Text>
       {item.city ? (

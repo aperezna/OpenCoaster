@@ -1,4 +1,9 @@
-import { filterCompatibleImages, isCompatibleLicense, type ImageMetadata } from '../imageMetadata';
+import {
+  filterCompatibleImages,
+  isCompatibleLicense,
+  sanitizeAttribution,
+  type ImageMetadata,
+} from '../imageMetadata';
 
 const image = (licenseName: string): ImageMetadata => ({
   sourceUrl: 'https://commons.wikimedia.org/wiki/File:Park.jpg',
@@ -27,6 +32,16 @@ describe('image metadata contracts', () => {
       thumbnailUrl: 'https://example.com/thumbnail.jpg',
       fetchedAt: '2026-09-27T12:00:00.000Z',
     });
+  });
+
+  it('sanitizes provider HTML and common entities while preserving readable attribution', () => {
+    expect(
+      sanitizeAttribution('<a href="https://example.com">A. Creator</a> &amp; <b>OpenCoaster</b>'),
+    ).toBe('A. Creator & OpenCoaster');
+    expect(sanitizeAttribution('A. Creator, CC BY 4.0')).toBe('A. Creator, CC BY 4.0');
+    expect(sanitizeAttribution('Line one<br />Line two&nbsp;&mdash; 2026')).toBe(
+      'Line one Line two — 2026',
+    );
   });
 });
 

@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  Image,
   ScrollView,
   RefreshControl,
   TouchableOpacity,
@@ -38,10 +37,22 @@ import ErrorState from '../../components/ErrorState';
 import type { RouteProp } from '@react-navigation/native';
 import type { ParquesStackParamList } from '../../navigation/ParquesStackNavigator';
 import type { Attraction } from '../../data/models/Attraction';
+import type { ParkSummary } from '../../data/models/ParkSummary';
 import { useLicensedImage, useLicensedImages } from '../../data/images/useLicensedImage';
 import { ImageAttribution } from '../../components/ImageAttribution';
+import { ImageWithFallback } from '../../components/ImageWithFallback';
 
 const DEFAULT_PARK_ID = '75ea578a-adc8-4116-a54d-dccb60765ef9'; // Magic Kingdom Park
+
+export function buildAttractionImageQueries(
+  park: Pick<ParkSummary, 'name'> | null | undefined,
+  attractions: readonly Attraction[] | undefined,
+): { query: string; image: Attraction['image'] }[] {
+  return (attractions ?? []).map((attraction) => ({
+    query: park ? `${park.name} ${attraction.name}` : '',
+    image: attraction.image,
+  }));
+}
 
 export function ParkDetailScreen(): React.JSX.Element {
   const { colors } = useTheme();
@@ -84,12 +95,7 @@ export function ParkDetailScreen(): React.JSX.Element {
     undefined,
     Boolean(park && !park.photoUrl && !park.image),
   );
-  const attractionImages = useLicensedImages(
-    (attractions ?? []).map((attraction) => ({
-      query: attraction.name,
-      image: attraction.image,
-    })),
-  );
+  const attractionImages = useLicensedImages(buildAttractionImageQueries(park, attractions));
   const attractionsWithImages = attractions?.map((attraction, index) => ({
     ...attraction,
     image: attraction.image ?? attractionImages[index],
@@ -270,12 +276,15 @@ export function ParkDetailScreen(): React.JSX.Element {
       {/* Photo header */}
       {park.photoUrl || park.image || licensedParkImage.image ? (
         <>
-          <Image
+          <ImageWithFallback
             testID="park-photo"
-            source={{
-              uri:
-                park.image?.thumbnailUrl ?? licensedParkImage.image?.thumbnailUrl ?? park.photoUrl,
-            }}
+            sources={[
+              park.image?.thumbnailUrl,
+              park.image?.originalUrl,
+              licensedParkImage.image?.thumbnailUrl,
+              licensedParkImage.image?.originalUrl,
+              park.photoUrl,
+            ]}
             style={styles.photo}
           />
           {(park.image ?? licensedParkImage.image) ? (

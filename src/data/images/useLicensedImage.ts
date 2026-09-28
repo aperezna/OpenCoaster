@@ -4,6 +4,11 @@ import type { ImageMetadata } from './imageMetadata';
 import { LicensedImageProvider, type ImageSearchProvider } from './licensedImageProvider';
 
 const defaultProvider = new LicensedImageProvider();
+const LICENSED_IMAGE_QUERY_KEY_SEGMENT = 'licensedImage-v3';
+
+function licensedImageQueryKey(normalizedQuery: string): readonly string[] {
+  return [...OPENCOASTER_KEY_PREFIX, LICENSED_IMAGE_QUERY_KEY_SEGMENT, normalizedQuery];
+}
 
 export function useLicensedImage(
   query: string,
@@ -17,7 +22,7 @@ export function useLicensedImage(
 } {
   const normalizedQuery = query.trim().replace(/\s+/g, ' ').toLowerCase();
   const imageQuery = useQuery({
-    queryKey: [...OPENCOASTER_KEY_PREFIX, 'licensedImage', normalizedQuery],
+    queryKey: licensedImageQueryKey(normalizedQuery),
     queryFn: async () => {
       try {
         return (await provider.searchImages(query))[0] ?? null;
@@ -47,7 +52,7 @@ export function useLicensedImages(
     queries: items.map((item) => {
       const normalizedQuery = item.query.trim().replace(/\s+/g, ' ').toLowerCase();
       return {
-        queryKey: [...OPENCOASTER_KEY_PREFIX, 'licensedImage', normalizedQuery],
+        queryKey: licensedImageQueryKey(normalizedQuery),
         queryFn: async () => {
           try {
             return (await provider.searchImages(item.query))[0] ?? null;

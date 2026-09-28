@@ -9,11 +9,13 @@ const DEFAULT_USER_AGENT = 'OpenCoaster/0.1 (licensed image retrieval)';
 
 interface OpenverseRecord {
   foreign_landing_url?: string;
+  title?: string | null;
   creator?: string | null;
   license?: string | null;
   license_version?: string | null;
   license_url?: string | null;
   thumbnail?: string | null;
+  url?: string | null;
 }
 
 interface OpenverseResponse {
@@ -125,16 +127,21 @@ export class OpenverseProvider {
     return (response.results ?? []).flatMap((record) => {
       const sourceUrl = record.foreign_landing_url?.trim();
       const thumbnailUrl = record.thumbnail?.trim();
+      const originalUrl = record.url?.trim();
       const creator = record.creator?.trim() ?? '';
       const name = licenseName(record);
-      if (!sourceUrl || !thumbnailUrl || !name || !record.license_url?.trim()) return [];
+      if (!sourceUrl || !thumbnailUrl || !originalUrl || !name || !record.license_url?.trim()) {
+        return [];
+      }
       return [
         {
           sourceUrl,
+          ...(record.title?.trim() ? { title: record.title.trim() } : {}),
           creator,
           license: { name, url: record.license_url.trim() },
           attribution: creator,
           thumbnailUrl,
+          originalUrl,
           fetchedAt,
         },
       ];

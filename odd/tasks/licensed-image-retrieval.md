@@ -40,6 +40,12 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 - [x] IMG-3: Implement Openverse fallback and deterministic provider orchestration.
 - [x] IMG-4: Integrate image lookup into park/attraction data and UI with attribution/fallback states.
 - [x] IMG-5: Run full validation, document source/licensing behavior, and publish the work unit.
+- [x] IMG-6: Sanitize provider attribution HTML and add resilient native image loading fallback.
+- [x] IMG-7: Capture the native image-loader failure and correct the provider URL shape if needed.
+- [x] IMG-8: Make Wikimedia native image requests compatible with CDN hotlink policy.
+- [x] IMG-9: Prefer directly loadable Openverse provider URLs when Wikimedia CDN blocks native images.
+- [x] IMG-10: Version the persisted licensed-image query key after changing provider selection.
+- [x] IMG-11: Add park context and relevance filtering to attraction image searches.
 
 ## Acceptance Criteria
 
@@ -60,7 +66,11 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 
 ## Progress
 
-- Route: delegated direct implementation; the change spans multiple non-trivial files and external-provider behavior.
-- Current step: IMG-5 complete; Wikimedia Commons is primary, Openverse is a commercial-compatible fallback, and all displayed image metadata retains source, creator, license, attribution, and fetched timestamp. RCDB is intentionally excluded because its terms do not authorize constructing applications from its content without written permission.
-- Verification evidence: 53 suites / 445 tests passed; typecheck passed; format check passed; lint passed with 20 existing warnings and 0 errors. Expected React console diagnostics remain in error-path tests, and one existing Leaflet `act(...)` warning remains.
-- Next step: commit and publish this work unit.
+- Route: single-writer direct implementation on feature branch `fix/img-6-native-image-fallback`.
+- Current step: IMG-11 implementation complete; attraction queries now include park and attraction names, and provider results are conservatively relevance-filtered before orchestration ordering.
+- Root-cause evidence: Emulator logcat continued to report HTTP 403 for `thumb.wikimedia.org` and `upload.wikimedia.org` after IMG-8. The host machine can fetch the same resources, so this is an emulator/native-CDN compatibility boundary rather than invalid metadata.
+- Verification evidence: Strict TDD RED observed for query construction, title mapping, relevance, and query-key assertions, followed by GREEN. Focused image/provider/UI suite: 5 suites / 43 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 458 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 20 pre-existing warnings and no errors. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
+- Commit identity: `54f8f52` (`fix(images): version licensed image query keys`), following `bbc134b` (`fix(images): prefer directly loadable Openverse URLs`).
+- Commit identity: `46aa051` (`fix(images): filter contextual attraction results`).
+- Relevance rule: normalize query and candidate title, attribution, and source-URL text into deduplicated alphanumeric tokens; for contextual queries with at least two meaningful tokens, retain and stably rank only candidates containing every token. Single-token searches preserve existing provider ordering.
+- Remaining limitation: No fresh emulator detail-screen lookup was run in this work unit; conservative all-token matching can return no image when provider metadata omits part of the park or attraction context.

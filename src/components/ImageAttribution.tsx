@@ -2,12 +2,13 @@ import React from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { ImageMetadata } from '../data/images/imageMetadata';
+import { sanitizeAttribution } from '../data/images/imageMetadata';
 
 export function ImageAttribution({ image, testID }: { image: ImageMetadata; testID: string }) {
   const { t } = useTranslation();
   return (
     <View testID={testID} style={styles.container}>
-      <Text style={styles.text}>{image.attribution || image.creator}</Text>
+      <Text style={styles.text}>{sanitizeAttribution(image.attribution || image.creator)}</Text>
       <Text style={styles.text}>{image.license.name}</Text>
       <Pressable
         testID={`${testID}-source`}

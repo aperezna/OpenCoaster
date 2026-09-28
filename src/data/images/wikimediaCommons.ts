@@ -1,4 +1,4 @@
-import { filterCompatibleImages, type ImageMetadata } from './imageMetadata';
+import { filterCompatibleImages, sanitizeAttribution, type ImageMetadata } from './imageMetadata';
 import { AsyncStorageImageMetadataCache, type ImageMetadataCache } from './imageMetadataCache';
 
 export const WIKIMEDIA_COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
@@ -20,7 +20,7 @@ interface WikimediaImageInfo {
 }
 
 interface WikimediaResponse {
-  query?: { pages?: Record<string, { imageinfo?: WikimediaImageInfo[] }> };
+  query?: { pages?: Record<string, { title?: string; imageinfo?: WikimediaImageInfo[] }> };
 }
 
 export interface WikimediaCommonsOptions {
@@ -149,16 +149,20 @@ export class WikimediaCommonsProvider {
       const thumbnailUrl = info.thumburl ?? info.url;
       const licenseName = metadataText(metadata, 'LicenseShortName');
       if (!sourceUrl || !thumbnailUrl || !licenseName) return [];
-      const creator = metadataText(metadata, 'Artist') || metadataText(metadata, 'Creator');
+      const creator = sanitizeAttribution(
+        metadataText(metadata, 'Artist') || metadataText(metadata, 'Creator'),
+      );
       const licenseUrl = metadataText(metadata, 'LicenseUrl');
-      const attribution = metadataText(metadata, 'Credit') || creator;
+      const attribution = sanitizeAttribution(metadataText(metadata, 'Credit') || creator);
       return [
         {
           sourceUrl,
+          ...(page.title ? { title: page.title } : {}),
           creator,
           license: { name: licenseName, url: licenseUrl },
           attribution,
           thumbnailUrl,
+          originalUrl: info.url,
           fetchedAt,
         },
       ];

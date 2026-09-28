@@ -30,6 +30,7 @@
   "parkDetail.noPhoto": "Sin foto disponible",
   "images.source": "Ver fuente original",
   "images.openSource": "Abrir fuente de la imagen",
+  "images.unavailable": "Imagen no disponible",
   "parkDetail.directions": "Cómo llegar",
   "parkDetail.planVisit": "Planificar visita",
   "parkDetail.shareTitle": "{parkName} · {city}, {country}",
