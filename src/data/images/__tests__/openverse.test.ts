@@ -26,6 +26,7 @@ describe('OpenverseProvider', () => {
           license_version: '4.0',
           license_url: 'https://creativecommons.org/licenses/by-sa/4.0/',
           thumbnail: 'https://example.com/thumb.jpg',
+          url: 'https://live.staticflickr.com/direct.jpg',
         },
         {
           foreign_landing_url: 'https://example.com/rejected',
@@ -48,6 +49,7 @@ describe('OpenverseProvider', () => {
         },
         attribution: 'A. Creator',
         thumbnailUrl: 'https://example.com/thumb.jpg',
+        originalUrl: 'https://live.staticflickr.com/direct.jpg',
         fetchedAt: new Date(0).toISOString(),
       },
     ]);

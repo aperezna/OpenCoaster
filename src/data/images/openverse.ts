@@ -14,6 +14,7 @@ interface OpenverseRecord {
   license_version?: string | null;
   license_url?: string | null;
   thumbnail?: string | null;
+  url?: string | null;
 }
 
 interface OpenverseResponse {
@@ -125,9 +126,12 @@ export class OpenverseProvider {
     return (response.results ?? []).flatMap((record) => {
       const sourceUrl = record.foreign_landing_url?.trim();
       const thumbnailUrl = record.thumbnail?.trim();
+      const originalUrl = record.url?.trim();
       const creator = record.creator?.trim() ?? '';
       const name = licenseName(record);
-      if (!sourceUrl || !thumbnailUrl || !name || !record.license_url?.trim()) return [];
+      if (!sourceUrl || !thumbnailUrl || !originalUrl || !name || !record.license_url?.trim()) {
+        return [];
+      }
       return [
         {
           sourceUrl,
@@ -135,6 +139,7 @@ export class OpenverseProvider {
           license: { name, url: record.license_url.trim() },
           attribution: creator,
           thumbnailUrl,
+          originalUrl,
           fetchedAt,
         },
       ];

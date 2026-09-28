@@ -24,6 +24,19 @@ function deduplicateBySourceUrl(images: readonly ImageMetadata[]): ImageMetadata
   });
 }
 
+function isWikimediaUrl(value: string): boolean {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname === 'wikimedia.org' || hostname.endsWith('.wikimedia.org');
+  } catch {
+    return false;
+  }
+}
+
+function isDirectlyLoadableOpenverseImage(image: ImageMetadata): boolean {
+  return !isWikimediaUrl(image.originalUrl ?? image.thumbnailUrl);
+}
+
 export class LicensedImageProvider implements ImageSearchProvider {
   private readonly commons: ImageSearchProvider;
   private readonly openverse: ImageSearchProvider;
@@ -57,14 +70,20 @@ export class LicensedImageProvider implements ImageSearchProvider {
     } catch {
       // A recoverable Commons error should not prevent the fallback provider.
     }
-    if (commonsImages.length > 0) return deduplicateBySourceUrl(commonsImages);
-
     let openverseImages: ImageMetadata[] = [];
     try {
       openverseImages = await this.openverse.searchImages(query);
     } catch {
       // Degrade to no images when both providers are unavailable.
     }
-    return deduplicateBySourceUrl([...commonsImages, ...openverseImages]);
+    const directOpenverseImages = openverseImages.filter(isDirectlyLoadableOpenverseImage);
+    const fallbackOpenverseImages = openverseImages.filter(
+      (image) => !isDirectlyLoadableOpenverseImage(image),
+    );
+    return deduplicateBySourceUrl([
+      ...directOpenverseImages,
+      ...commonsImages,
+      ...fallbackOpenverseImages,
+    ]);
   }
 }

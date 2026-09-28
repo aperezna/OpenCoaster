@@ -11,13 +11,18 @@ const image = (sourceUrl: string): ImageMetadata => ({
 });
 
 describe('LicensedImageProvider', () => {
-  it('returns Commons results first without calling Openverse', async () => {
+  it('prefers directly loadable Openverse results before Wikimedia results', async () => {
     const commons = { searchImages: jest.fn().mockResolvedValue([image('https://commons/a')]) };
-    const openverse = { searchImages: jest.fn() };
+    const openverse = {
+      searchImages: jest.fn().mockResolvedValue([image('https://live.staticflickr.com/direct')]),
+    };
     const provider = new LicensedImageProvider({ commons, openverse });
 
-    await expect(provider.searchImages('Park')).resolves.toEqual([image('https://commons/a')]);
-    expect(openverse.searchImages).not.toHaveBeenCalled();
+    await expect(provider.searchImages('Park')).resolves.toEqual([
+      image('https://live.staticflickr.com/direct'),
+      image('https://commons/a'),
+    ]);
+    expect(openverse.searchImages).toHaveBeenCalledWith('park');
   });
 
   it('falls back after an empty or failed Commons search, preserves order, and deduplicates source URLs', async () => {
@@ -29,19 +34,19 @@ describe('LicensedImageProvider', () => {
         .fn()
         .mockResolvedValue([
           image('https://commons/a'),
-          image('https://openverse/b'),
-          image('https://openverse/b'),
+          image('https://upload.wikimedia.org/openverse/b'),
+          image('https://upload.wikimedia.org/openverse/b'),
         ]),
     };
     const provider = new LicensedImageProvider({ commons, openverse });
 
     await expect(provider.searchImages('Park')).resolves.toEqual([
       image('https://commons/a'),
-      image('https://openverse/b'),
+      image('https://upload.wikimedia.org/openverse/b'),
     ]);
     await expect(provider.searchImages('Park 2')).resolves.toEqual([
       image('https://commons/a'),
-      image('https://openverse/b'),
+      image('https://upload.wikimedia.org/openverse/b'),
     ]);
   });
 
