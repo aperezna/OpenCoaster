@@ -44,6 +44,7 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 - [x] IMG-7: Capture the native image-loader failure and correct the provider URL shape if needed.
 - [x] IMG-8: Make Wikimedia native image requests compatible with CDN hotlink policy.
 - [x] IMG-9: Prefer directly loadable Openverse provider URLs when Wikimedia CDN blocks native images.
+- [x] IMG-10: Version the persisted licensed-image query key after changing provider selection.
 
 ## Acceptance Criteria
 
@@ -65,8 +66,8 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 ## Progress
 
 - Route: single-writer direct implementation on feature branch `fix/img-6-native-image-fallback`.
-- Current step: IMG-9 complete; directly loadable non-Wikimedia Openverse URLs are preferred while Wikimedia remains a valid catalog and image fallback.
+- Current step: IMG-10 implementation complete; the emulator was reusing a 24-hour React Query licensed-image result created before the Openverse selection change. The query key is now versioned so persisted stale Wikimedia metadata cannot mask the new provider behavior.
 - Root-cause evidence: Emulator logcat continued to report HTTP 403 for `thumb.wikimedia.org` and `upload.wikimedia.org` after IMG-8. The host machine can fetch the same resources, so this is an emulator/native-CDN compatibility boundary rather than invalid metadata.
-- Verification evidence: Strict TDD RED observed for Openverse native URL mapping and provider ordering, followed by GREEN. Focused image/provider/UI suite: 9 suites / 71 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 452 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 0 errors and 20 pre-existing warnings. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
-- Commit identity: `bbc134b` (`fix(images): prefer directly loadable Openverse URLs`).
-- Remaining limitation: the clean Android emulator was not available for a new end-to-end image load; the implementation follows the confirmed live API evidence and preserves native fallback behavior.
+- Verification evidence: Strict TDD RED observed for both hook key assertions, followed by GREEN. Focused image/provider/UI suite: 18 suites / 134 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 453 tests passed. `npm run typecheck` passed. `npm run format:check` passed. The implementation commit's lint-staged checks passed; no separate lint run was required for this task. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
+- Commit identity: `54f8f52` (`fix(images): version licensed image query keys`), following `bbc134b` (`fix(images): prefer directly loadable Openverse URLs`).
+- Remaining limitation: No fresh emulator lookup was run in this work unit, so native runtime confirmation of the new cache namespace remains pending.
