@@ -41,6 +41,7 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 - [x] IMG-4: Integrate image lookup into park/attraction data and UI with attribution/fallback states.
 - [x] IMG-5: Run full validation, document source/licensing behavior, and publish the work unit.
 - [x] IMG-6: Sanitize provider attribution HTML and add resilient native image loading fallback.
+- [x] IMG-7: Capture the native image-loader failure and correct the provider URL shape if needed.
 
 ## Acceptance Criteria
 
@@ -62,7 +63,7 @@ OpenCoaster currently exposes only limited park media and no attraction imagery.
 ## Progress
 
 - Route: single-writer direct implementation on feature branch `fix/img-6-native-image-fallback`.
-- Current step: IMG-6 complete; Wikimedia attribution is normalized before native rendering, and all affected park/attraction image paths use the shared fallback component.
-- Verification evidence: Strict TDD RED observed before implementation (missing sanitizer/component failures). Focused image/provider/park-detail/attraction/discovery suite: 6 suites / 62 tests passed. Full `npm test -- --runInBand`: 54 suites / 450 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 0 errors and 20 pre-existing warnings. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains. Focused Jest runs still report the repository's existing open-handle diagnostic after passing.
-- Commit identity: `f3b0d97` (`fix(images): normalize attribution and add native fallback`).
-- Next step: validate the emulator presentation of Wikimedia thumbnails and fallback behavior.
+- Current step: IMG-7 complete; Wikimedia returned HTTP 403 for both `thumb.wikimedia.org` and `upload.wikimedia.org` image candidates because native React Native Image requests lacked a descriptive User-Agent. The existing provider URL shape was retained.
+- Verification evidence: Strict TDD RED observed for missing request headers, followed by GREEN. Focused image/provider/park-detail/attraction/discovery suite: 11 suites / 122 tests passed. Full `npm test -- --runInBand --detectOpenHandles`: 54 suites / 450 tests passed. `npm run typecheck` passed. `npm run format:check` passed. `npm run lint` passed with 0 errors and 20 pre-existing warnings. Existing React console diagnostics remain in error-path tests, and the existing Leaflet `act(...)` warning remains.
+- Commit identity: `2f11ea1` (`fix(images): send descriptive Wikimedia request header`).
+- Next step: none for IMG-7; future work may perform a clean emulator verification with the updated native request headers.
